@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// extern UG_GUI *gui;
 
 #if 1
 
