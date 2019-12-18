@@ -9,7 +9,6 @@
 
 
 
-#if 1
 
 #include "lib/pirc_lcd/LCD_Ili9341.h"
 void window_1_callback(UG_MESSAGE *msg) { printf("Callback function\n"); }
@@ -65,8 +64,6 @@ void draw_home_scren() {
       UG_DrawLine(0,0, 320,0, ILI9341_WHITE);
     */
 }
-
-#endif
 
 int main() {
   LCD_Init();
