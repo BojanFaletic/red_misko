@@ -1,5 +1,3 @@
-
-
 #include "lib/delay.h"
 #include "lib/gpio.h"
 #include "lib/pirc_lcd/XPT2046.h"
