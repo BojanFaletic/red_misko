@@ -1,0 +1,1438 @@
+   1               		.file	"asm.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	osSetupTimerInterrupt
+  12               	osSetupTimerInterrupt:
+  13               	.LFB16:
+  14               		.file 1 "system/asm.c"
+   1:system/asm.c  **** /*
+   2:system/asm.c  ****  * Operating system for Atmel AVR microcontrollers
+   3:system/asm.c  ****  * Copyright (c) 2015 Konrad Kusnierz <iryont@gmail.com>
+   4:system/asm.c  ****  *
+   5:system/asm.c  ****  * Permission is hereby granted, free of charge, to any person obtaining a copy
+   6:system/asm.c  ****  * of this software and associated documentation files (the "Software"), to deal
+   7:system/asm.c  ****  * in the Software without restriction, including without limitation the rights
+   8:system/asm.c  ****  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   9:system/asm.c  ****  * copies of the Software, and to permit persons to whom the Software is
+  10:system/asm.c  ****  * furnished to do so, subject to the following conditions:
+  11:system/asm.c  ****  *
+  12:system/asm.c  ****  * The above copyright notice and this permission notice shall be included in
+  13:system/asm.c  ****  * all copies or substantial portions of the Software.
+  14:system/asm.c  ****  *
+  15:system/asm.c  ****  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  16:system/asm.c  ****  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  17:system/asm.c  ****  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  18:system/asm.c  ****  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  19:system/asm.c  ****  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  20:system/asm.c  ****  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  21:system/asm.c  ****  * THE SOFTWARE.
+  22:system/asm.c  ****  */
+  23:system/asm.c  **** 
+  24:system/asm.c  **** #include <avr/interrupt.h>
+  25:system/asm.c  **** #include "asm.h"
+  26:system/asm.c  **** #include "scheduler.h"
+  27:system/asm.c  **** 
+  28:system/asm.c  **** // save context of the current task (osTask)
+  29:system/asm.c  **** #define SAVE_CONTEXT                       \
+  30:system/asm.c  ****   asm volatile (                           \
+  31:system/asm.c  ****     "push  r0                       \n\t"  \
+  32:system/asm.c  ****     "in    r0, __SREG__             \n\t"  \
+  33:system/asm.c  ****     "cli                            \n\t"  \
+  34:system/asm.c  ****     "push  r0                       \n\t"  \
+  35:system/asm.c  ****     "push  r1                       \n\t"  \
+  36:system/asm.c  ****     "clr  r1                        \n\t"  \
+  37:system/asm.c  ****     "push  r2                       \n\t"  \
+  38:system/asm.c  ****     "push  r3                       \n\t"  \
+  39:system/asm.c  ****     "push  r4                       \n\t"  \
+  40:system/asm.c  ****     "push  r5                       \n\t"  \
+  41:system/asm.c  ****     "push  r6                       \n\t"  \
+  42:system/asm.c  ****     "push  r7                       \n\t"  \
+  43:system/asm.c  ****     "push  r8                       \n\t"  \
+  44:system/asm.c  ****     "push  r9                       \n\t"  \
+  45:system/asm.c  ****     "push  r10                      \n\t"  \
+  46:system/asm.c  ****     "push  r11                      \n\t"  \
+  47:system/asm.c  ****     "push  r12                      \n\t"  \
+  48:system/asm.c  ****     "push  r13                      \n\t"  \
+  49:system/asm.c  ****     "push  r14                      \n\t"  \
+  50:system/asm.c  ****     "push  r15                      \n\t"  \
+  51:system/asm.c  ****     "push  r16                      \n\t"  \
+  52:system/asm.c  ****     "push  r17                      \n\t"  \
+  53:system/asm.c  ****     "push  r18                      \n\t"  \
+  54:system/asm.c  ****     "push  r19                      \n\t"  \
+  55:system/asm.c  ****     "push  r20                      \n\t"  \
+  56:system/asm.c  ****     "push  r21                      \n\t"  \
+  57:system/asm.c  ****     "push  r22                      \n\t"  \
+  58:system/asm.c  ****     "push  r23                      \n\t"  \
+  59:system/asm.c  ****     "push  r24                      \n\t"  \
+  60:system/asm.c  ****     "push  r25                      \n\t"  \
+  61:system/asm.c  ****     "push  r26                      \n\t"  \
+  62:system/asm.c  ****     "push  r27                      \n\t"  \
+  63:system/asm.c  ****     "push  r28                      \n\t"  \
+  64:system/asm.c  ****     "push  r29                      \n\t"  \
+  65:system/asm.c  ****     "push  r30                      \n\t"  \
+  66:system/asm.c  ****     "push  r31                      \n\t"  \
+  67:system/asm.c  ****     "lds  r26, osCurrentTask        \n\t"  \
+  68:system/asm.c  ****     "lds  r27, osCurrentTask + 1    \n\t"  \
+  69:system/asm.c  ****     "in    r0, __SP_L__             \n\t"  \
+  70:system/asm.c  ****     "st    x+, r0                   \n\t"  \
+  71:system/asm.c  ****     "in    r0, __SP_H__             \n\t"  \
+  72:system/asm.c  ****     "st    x+, r0                   \n\t"  \
+  73:system/asm.c  ****   );
+  74:system/asm.c  **** 
+  75:system/asm.c  **** 
+  76:system/asm.c  **** // restore context of the current task (osCurrentTask)
+  77:system/asm.c  **** #define RESTORE_CONTEXT                    \
+  78:system/asm.c  ****   asm volatile (                           \
+  79:system/asm.c  ****     "lds  r26, osCurrentTask        \n\t"  \
+  80:system/asm.c  ****     "lds  r27, osCurrentTask + 1    \n\t"  \
+  81:system/asm.c  ****     "ld    r28, x+                  \n\t"  \
+  82:system/asm.c  ****     "out  __SP_L__, r28             \n\t"  \
+  83:system/asm.c  ****     "ld    r29, x+                  \n\t"  \
+  84:system/asm.c  ****     "out  __SP_H__, r29             \n\t"  \
+  85:system/asm.c  ****     "pop  r31                       \n\t"  \
+  86:system/asm.c  ****     "pop  r30                       \n\t"  \
+  87:system/asm.c  ****     "pop  r29                       \n\t"  \
+  88:system/asm.c  ****     "pop  r28                       \n\t"  \
+  89:system/asm.c  ****     "pop  r27                       \n\t"  \
+  90:system/asm.c  ****     "pop  r26                       \n\t"  \
+  91:system/asm.c  ****     "pop  r25                       \n\t"  \
+  92:system/asm.c  ****     "pop  r24                       \n\t"  \
+  93:system/asm.c  ****     "pop  r23                       \n\t"  \
+  94:system/asm.c  ****     "pop  r22                       \n\t"  \
+  95:system/asm.c  ****     "pop  r21                       \n\t"  \
+  96:system/asm.c  ****     "pop  r20                       \n\t"  \
+  97:system/asm.c  ****     "pop  r19                       \n\t"  \
+  98:system/asm.c  ****     "pop  r18                       \n\t"  \
+  99:system/asm.c  ****     "pop  r17                       \n\t"  \
+ 100:system/asm.c  ****     "pop  r16                       \n\t"  \
+ 101:system/asm.c  ****     "pop  r15                       \n\t"  \
+ 102:system/asm.c  ****     "pop  r14                       \n\t"  \
+ 103:system/asm.c  ****     "pop  r13                       \n\t"  \
+ 104:system/asm.c  ****     "pop  r12                       \n\t"  \
+ 105:system/asm.c  ****     "pop  r11                       \n\t"  \
+ 106:system/asm.c  ****     "pop  r10                       \n\t"  \
+ 107:system/asm.c  ****     "pop  r9                        \n\t"  \
+ 108:system/asm.c  ****     "pop  r8                        \n\t"  \
+ 109:system/asm.c  ****     "pop  r7                        \n\t"  \
+ 110:system/asm.c  ****     "pop  r6                        \n\t"  \
+ 111:system/asm.c  ****     "pop  r5                        \n\t"  \
+ 112:system/asm.c  ****     "pop  r4                        \n\t"  \
+ 113:system/asm.c  ****     "pop  r3                        \n\t"  \
+ 114:system/asm.c  ****     "pop  r2                        \n\t"  \
+ 115:system/asm.c  ****     "pop  r1                        \n\t"  \
+ 116:system/asm.c  ****     "pop  r0                        \n\t"  \
+ 117:system/asm.c  ****     "out  __SREG__, r0              \n\t"  \
+ 118:system/asm.c  ****     "pop  r0                        \n\t"  \
+ 119:system/asm.c  ****   );
+ 120:system/asm.c  **** 
+ 121:system/asm.c  **** void osSetupTimerInterrupt()
+ 122:system/asm.c  **** {
+  15               		.loc 1 122 1 view -0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+ 123:system/asm.c  ****     #define CTC_MATCH_OVERFLOW  ((F_CPU / 1000) / 8)
+ 124:system/asm.c  **** 
+ 125:system/asm.c  ****     OCR1AH = (uint8_t)(CTC_MATCH_OVERFLOW >> 8);
+  21               		.loc 1 125 5 view .LVU1
+  22               		.loc 1 125 12 is_stmt 0 view .LVU2
+  23 0000 87E0      		ldi r24,lo8(7)
+  24 0002 8093 8900 		sts 137,r24
+ 126:system/asm.c  ****     OCR1AL = (uint8_t)(CTC_MATCH_OVERFLOW);
+  25               		.loc 1 126 5 is_stmt 1 view .LVU3
+  26               		.loc 1 126 12 is_stmt 0 view .LVU4
+  27 0006 80ED      		ldi r24,lo8(-48)
+  28 0008 8093 8800 		sts 136,r24
+ 127:system/asm.c  **** 
+ 128:system/asm.c  ****     // CTC mode, clock/8
+ 129:system/asm.c  ****     TCCR1B |= (1 << WGM12) | (1 << CS11);
+  29               		.loc 1 129 5 is_stmt 1 view .LVU5
+  30               		.loc 1 129 12 is_stmt 0 view .LVU6
+  31 000c E1E8      		ldi r30,lo8(-127)
+  32 000e F0E0      		ldi r31,0
+  33 0010 8081      		ld r24,Z
+  34 0012 8A60      		ori r24,lo8(10)
+  35 0014 8083      		st Z,r24
+ 130:system/asm.c  **** 
+ 131:system/asm.c  ****     // initialize the counter
+ 132:system/asm.c  ****     TCNT1 = 0;
+  36               		.loc 1 132 5 is_stmt 1 view .LVU7
+  37               		.loc 1 132 11 is_stmt 0 view .LVU8
+  38 0016 1092 8500 		sts 132+1,__zero_reg__
+  39 001a 1092 8400 		sts 132,__zero_reg__
+ 133:system/asm.c  **** 
+ 134:system/asm.c  ****     // enable the compare match interrupt
+ 135:system/asm.c  ****     // changed from tim0
+ 136:system/asm.c  ****     TIMSK1 |= (1 << OCIE1A);
+  40               		.loc 1 136 5 is_stmt 1 view .LVU9
+  41               		.loc 1 136 12 is_stmt 0 view .LVU10
+  42 001e EFE6      		ldi r30,lo8(111)
+  43 0020 F0E0      		ldi r31,0
+  44 0022 8081      		ld r24,Z
+  45 0024 8260      		ori r24,lo8(2)
+  46 0026 8083      		st Z,r24
+ 137:system/asm.c  **** 
+ 138:system/asm.c  ****     sei();
+  47               		.loc 1 138 5 is_stmt 1 view .LVU11
+  48               	/* #APP */
+  49               	 ;  138 "system/asm.c" 1
+  50 0028 7894      		sei
+  51               	 ;  0 "" 2
+  52               	/* #NOAPP */
+  53               	/* epilogue start */
+ 139:system/asm.c  **** }
+  54               		.loc 1 139 1 is_stmt 0 view .LVU12
+  55 002a 0895      		ret
+  56               		.cfi_endproc
+  57               	.LFE16:
+  59               	.global	osTAS
+  61               	osTAS:
+  62               	.LVL0:
+  63               	.LFB17:
+ 140:system/asm.c  **** 
+ 141:system/asm.c  **** uint8_t osTAS(uint8_t *v)
+ 142:system/asm.c  **** {
+  64               		.loc 1 142 1 is_stmt 1 view -0
+  65               		.cfi_startproc
+  66               	/* prologue: function */
+  67               	/* frame size = 0 */
+  68               	/* stack size = 0 */
+  69               	.L__stack_usage = 0
+  70               		.loc 1 142 1 is_stmt 0 view .LVU14
+  71 002c FC01      		movw r30,r24
+ 143:system/asm.c  ****     uint8_t p = 0;
+  72               		.loc 1 143 5 is_stmt 1 view .LVU15
+  73               	.LVL1:
+ 144:system/asm.c  **** 
+ 145:system/asm.c  ****     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  74               		.loc 1 145 5 view .LVU16
+  75               	.LBB12:
+  76               		.loc 1 145 5 view .LVU17
+  77 002e 9FB7      		in r25,__SREG__
+  78               	.LVL2:
+  79               	.LBB13:
+  80               	.LBI13:
+  81               		.file 2 "/usr/avr/include/util/atomic.h"
+   1:/usr/avr/include/util/atomic.h **** /* Copyright (c) 2007 Dean Camera
+   2:/usr/avr/include/util/atomic.h ****    All rights reserved.
+   3:/usr/avr/include/util/atomic.h **** 
+   4:/usr/avr/include/util/atomic.h ****    Redistribution and use in source and binary forms, with or without
+   5:/usr/avr/include/util/atomic.h ****    modification, are permitted provided that the following conditions are met:
+   6:/usr/avr/include/util/atomic.h **** 
+   7:/usr/avr/include/util/atomic.h ****    * Redistributions of source code must retain the above copyright
+   8:/usr/avr/include/util/atomic.h ****      notice, this list of conditions and the following disclaimer.
+   9:/usr/avr/include/util/atomic.h **** 
+  10:/usr/avr/include/util/atomic.h ****    * Redistributions in binary form must reproduce the above copyright
+  11:/usr/avr/include/util/atomic.h ****      notice, this list of conditions and the following disclaimer in
+  12:/usr/avr/include/util/atomic.h ****      the documentation and/or other materials provided with the
+  13:/usr/avr/include/util/atomic.h ****      distribution.
+  14:/usr/avr/include/util/atomic.h **** 
+  15:/usr/avr/include/util/atomic.h ****    * Neither the name of the copyright holders nor the names of
+  16:/usr/avr/include/util/atomic.h ****      contributors may be used to endorse or promote products derived
+  17:/usr/avr/include/util/atomic.h ****      from this software without specific prior written permission.
+  18:/usr/avr/include/util/atomic.h **** 
+  19:/usr/avr/include/util/atomic.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  20:/usr/avr/include/util/atomic.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  21:/usr/avr/include/util/atomic.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  22:/usr/avr/include/util/atomic.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  23:/usr/avr/include/util/atomic.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  24:/usr/avr/include/util/atomic.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  25:/usr/avr/include/util/atomic.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  26:/usr/avr/include/util/atomic.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  27:/usr/avr/include/util/atomic.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  28:/usr/avr/include/util/atomic.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  29:/usr/avr/include/util/atomic.h ****   POSSIBILITY OF SUCH DAMAGE.
+  30:/usr/avr/include/util/atomic.h **** */
+  31:/usr/avr/include/util/atomic.h **** 
+  32:/usr/avr/include/util/atomic.h **** /* $Id: atomic.h 2158 2010-06-10 15:48:28Z joerg_wunsch $ */
+  33:/usr/avr/include/util/atomic.h **** 
+  34:/usr/avr/include/util/atomic.h **** #ifndef _UTIL_ATOMIC_H_
+  35:/usr/avr/include/util/atomic.h **** #define _UTIL_ATOMIC_H_ 1
+  36:/usr/avr/include/util/atomic.h **** 
+  37:/usr/avr/include/util/atomic.h **** #include <avr/io.h>
+  38:/usr/avr/include/util/atomic.h **** #include <avr/interrupt.h>
+  39:/usr/avr/include/util/atomic.h **** 
+  40:/usr/avr/include/util/atomic.h **** #if !defined(__DOXYGEN__)
+  41:/usr/avr/include/util/atomic.h **** /* Internal helper functions. */
+  42:/usr/avr/include/util/atomic.h **** static __inline__ uint8_t __iSeiRetVal(void)
+  43:/usr/avr/include/util/atomic.h **** {
+  44:/usr/avr/include/util/atomic.h ****     sei();
+  45:/usr/avr/include/util/atomic.h ****     return 1;
+  46:/usr/avr/include/util/atomic.h **** }
+  47:/usr/avr/include/util/atomic.h **** 
+  48:/usr/avr/include/util/atomic.h **** static __inline__ uint8_t __iCliRetVal(void)
+  82               		.loc 2 48 27 view .LVU18
+  83               	.LBB14:
+  49:/usr/avr/include/util/atomic.h **** {
+  50:/usr/avr/include/util/atomic.h ****     cli();
+  84               		.loc 2 50 5 view .LVU19
+  85               	/* #APP */
+  86               	 ;  50 "/usr/avr/include/util/atomic.h" 1
+  87 0030 F894      		cli
+  88               	 ;  0 "" 2
+  51:/usr/avr/include/util/atomic.h ****     return 1;
+  89               		.loc 2 51 5 view .LVU20
+  90               	.LVL3:
+  91               		.loc 2 51 5 is_stmt 0 view .LVU21
+  92               	/* #NOAPP */
+  93               	.LBE14:
+  94               	.LBE13:
+  95               		.loc 1 145 5 is_stmt 1 view .LVU22
+ 146:system/asm.c  ****         if((p = *v) == 0)
+  96               		.loc 1 146 9 view .LVU23
+  97               		.loc 1 146 15 is_stmt 0 view .LVU24
+  98 0032 8081      		ld r24,Z
+  99               	.LVL4:
+ 100               		.loc 1 146 11 view .LVU25
+ 101 0034 8111      		cpse r24,__zero_reg__
+ 102 0036 00C0      		rjmp .L3
+ 147:system/asm.c  ****             *v = 1;
+ 103               		.loc 1 147 13 is_stmt 1 view .LVU26
+ 104               		.loc 1 147 16 is_stmt 0 view .LVU27
+ 105 0038 21E0      		ldi r18,lo8(1)
+ 106 003a 2083      		st Z,r18
+ 107               	.L3:
+ 145:system/asm.c  ****         if((p = *v) == 0)
+ 108               		.loc 1 145 5 is_stmt 1 discriminator 2 view .LVU28
+ 109               	.LVL5:
+ 145:system/asm.c  ****         if((p = *v) == 0)
+ 110               		.loc 1 145 5 discriminator 2 view .LVU29
+ 111               	.LBB15:
+ 112               	.LBI15:
+  52:/usr/avr/include/util/atomic.h **** }
+  53:/usr/avr/include/util/atomic.h **** 
+  54:/usr/avr/include/util/atomic.h **** static __inline__ void __iSeiParam(const uint8_t *__s)
+  55:/usr/avr/include/util/atomic.h **** {
+  56:/usr/avr/include/util/atomic.h ****     sei();
+  57:/usr/avr/include/util/atomic.h ****     __asm__ volatile ("" ::: "memory");
+  58:/usr/avr/include/util/atomic.h ****     (void)__s;
+  59:/usr/avr/include/util/atomic.h **** }
+  60:/usr/avr/include/util/atomic.h **** 
+  61:/usr/avr/include/util/atomic.h **** static __inline__ void __iCliParam(const uint8_t *__s)
+  62:/usr/avr/include/util/atomic.h **** {
+  63:/usr/avr/include/util/atomic.h ****     cli();
+  64:/usr/avr/include/util/atomic.h ****     __asm__ volatile ("" ::: "memory");
+  65:/usr/avr/include/util/atomic.h ****     (void)__s;
+  66:/usr/avr/include/util/atomic.h **** }
+  67:/usr/avr/include/util/atomic.h **** 
+  68:/usr/avr/include/util/atomic.h **** static __inline__ void __iRestore(const  uint8_t *__s)
+ 113               		.loc 2 68 24 discriminator 2 view .LVU30
+ 114               	.LBB16:
+  69:/usr/avr/include/util/atomic.h **** {
+  70:/usr/avr/include/util/atomic.h ****     SREG = *__s;
+ 115               		.loc 2 70 5 discriminator 2 view .LVU31
+ 116               		.loc 2 70 10 is_stmt 0 discriminator 2 view .LVU32
+ 117 003c 9FBF      		out __SREG__,r25
+  71:/usr/avr/include/util/atomic.h ****     __asm__ volatile ("" ::: "memory");
+ 118               		.loc 2 71 5 is_stmt 1 discriminator 2 view .LVU33
+ 119               	.LVL6:
+ 120               		.loc 2 71 5 is_stmt 0 discriminator 2 view .LVU34
+ 121               	.LBE16:
+ 122               	.LBE15:
+ 123               	.LBE12:
+ 148:system/asm.c  ****     }
+ 149:system/asm.c  **** 
+ 150:system/asm.c  ****     return p;
+ 124               		.loc 1 150 5 is_stmt 1 discriminator 2 view .LVU35
+ 125               	/* epilogue start */
+ 151:system/asm.c  **** }
+ 126               		.loc 1 151 1 is_stmt 0 discriminator 2 view .LVU36
+ 127 003e 0895      		ret
+ 128               		.cfi_endproc
+ 129               	.LFE17:
+ 131               	.global	osCAS
+ 133               	osCAS:
+ 134               	.LVL7:
+ 135               	.LFB18:
+ 152:system/asm.c  **** 
+ 153:system/asm.c  **** uint8_t osCAS(uint8_t *v, uint8_t p, uint8_t q)
+ 154:system/asm.c  **** {
+ 136               		.loc 1 154 1 is_stmt 1 view -0
+ 137               		.cfi_startproc
+ 138               	/* prologue: function */
+ 139               	/* frame size = 0 */
+ 140               	/* stack size = 0 */
+ 141               	.L__stack_usage = 0
+ 142               		.loc 1 154 1 is_stmt 0 view .LVU38
+ 143 0040 FC01      		movw r30,r24
+ 155:system/asm.c  ****     uint8_t n = 0;
+ 144               		.loc 1 155 5 is_stmt 1 view .LVU39
+ 145               	.LVL8:
+ 156:system/asm.c  **** 
+ 157:system/asm.c  ****     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+ 146               		.loc 1 157 5 view .LVU40
+ 147               	.LBB17:
+ 148               		.loc 1 157 5 view .LVU41
+ 149 0042 9FB7      		in r25,__SREG__
+ 150               	.LVL9:
+ 151               	.LBB18:
+ 152               	.LBI18:
+  48:/usr/avr/include/util/atomic.h **** {
+ 153               		.loc 2 48 27 view .LVU42
+ 154               	.LBB19:
+  50:/usr/avr/include/util/atomic.h ****     return 1;
+ 155               		.loc 2 50 5 view .LVU43
+ 156               	/* #APP */
+ 157               	 ;  50 "/usr/avr/include/util/atomic.h" 1
+ 158 0044 F894      		cli
+ 159               	 ;  0 "" 2
+  51:/usr/avr/include/util/atomic.h **** }
+ 160               		.loc 2 51 5 view .LVU44
+ 161               	.LVL10:
+  51:/usr/avr/include/util/atomic.h **** }
+ 162               		.loc 2 51 5 is_stmt 0 view .LVU45
+ 163               	/* #NOAPP */
+ 164               	.LBE19:
+ 165               	.LBE18:
+ 166               		.loc 1 157 5 is_stmt 1 view .LVU46
+ 158:system/asm.c  ****         if((n = *v) == p)
+ 167               		.loc 1 158 9 view .LVU47
+ 168               		.loc 1 158 15 is_stmt 0 view .LVU48
+ 169 0046 8081      		ld r24,Z
+ 170               	.LVL11:
+ 171               		.loc 1 158 11 view .LVU49
+ 172 0048 8613      		cpse r24,r22
+ 173 004a 00C0      		rjmp .L5
+ 159:system/asm.c  ****             *v = q;
+ 174               		.loc 1 159 13 is_stmt 1 view .LVU50
+ 175               		.loc 1 159 16 is_stmt 0 view .LVU51
+ 176 004c 4083      		st Z,r20
+ 177               	.L5:
+ 157:system/asm.c  ****         if((n = *v) == p)
+ 178               		.loc 1 157 5 is_stmt 1 discriminator 2 view .LVU52
+ 179               	.LVL12:
+ 157:system/asm.c  ****         if((n = *v) == p)
+ 180               		.loc 1 157 5 discriminator 2 view .LVU53
+ 181               	.LBB20:
+ 182               	.LBI20:
+  68:/usr/avr/include/util/atomic.h **** {
+ 183               		.loc 2 68 24 discriminator 2 view .LVU54
+ 184               	.LBB21:
+  70:/usr/avr/include/util/atomic.h ****     __asm__ volatile ("" ::: "memory");
+ 185               		.loc 2 70 5 discriminator 2 view .LVU55
+  70:/usr/avr/include/util/atomic.h ****     __asm__ volatile ("" ::: "memory");
+ 186               		.loc 2 70 10 is_stmt 0 discriminator 2 view .LVU56
+ 187 004e 9FBF      		out __SREG__,r25
+ 188               		.loc 2 71 5 is_stmt 1 discriminator 2 view .LVU57
+ 189               	.LVL13:
+ 190               		.loc 2 71 5 is_stmt 0 discriminator 2 view .LVU58
+ 191               	.LBE21:
+ 192               	.LBE20:
+ 193               	.LBE17:
+ 160:system/asm.c  ****     }
+ 161:system/asm.c  **** 
+ 162:system/asm.c  ****     return n;
+ 194               		.loc 1 162 5 is_stmt 1 discriminator 2 view .LVU59
+ 195               	/* epilogue start */
+ 163:system/asm.c  **** }
+ 196               		.loc 1 163 1 is_stmt 0 discriminator 2 view .LVU60
+ 197 0050 0895      		ret
+ 198               		.cfi_endproc
+ 199               	.LFE18:
+ 201               	.global	osInitializeStack
+ 203               	osInitializeStack:
+ 204               	.LVL14:
+ 205               	.LFB19:
+ 164:system/asm.c  **** 
+ 165:system/asm.c  **** uint8_t* osInitializeStack(uint8_t* topOfStack, void (*taskFunction)(void*), void* taskParameter)
+ 166:system/asm.c  **** {
+ 206               		.loc 1 166 1 is_stmt 1 view -0
+ 207               		.cfi_startproc
+ 208               	/* prologue: function */
+ 209               	/* frame size = 0 */
+ 210               	/* stack size = 0 */
+ 211               	.L__stack_usage = 0
+ 212               		.loc 1 166 1 is_stmt 0 view .LVU62
+ 213 0052 FC01      		movw r30,r24
+ 167:system/asm.c  ****     uint16_t address = 0;
+ 214               		.loc 1 167 5 is_stmt 1 view .LVU63
+ 215               	.LVL15:
+ 168:system/asm.c  **** 
+ 169:system/asm.c  ****     // indicates top of the stack - debug information
+ 170:system/asm.c  ****     *topOfStack = 0x13;
+ 216               		.loc 1 170 5 view .LVU64
+ 217               		.loc 1 170 17 is_stmt 0 view .LVU65
+ 218 0054 83E1      		ldi r24,lo8(19)
+ 219               	.LVL16:
+ 220               		.loc 1 170 17 view .LVU66
+ 221 0056 8083      		st Z,r24
+ 171:system/asm.c  ****     topOfStack--;
+ 222               		.loc 1 171 5 is_stmt 1 view .LVU67
+ 223               	.LVL17:
+ 172:system/asm.c  ****     *topOfStack = 0x37;
+ 224               		.loc 1 172 5 view .LVU68
+ 225               		.loc 1 172 17 is_stmt 0 view .LVU69
+ 226 0058 DF01      		movw r26,r30
+ 227 005a 1197      		sbiw r26,1
+ 228               	.LVL18:
+ 229               		.loc 1 172 17 view .LVU70
+ 230 005c 97E3      		ldi r25,lo8(55)
+ 231 005e 9C93      		st X,r25
+ 173:system/asm.c  ****     topOfStack--;
+ 232               		.loc 1 173 5 is_stmt 1 view .LVU71
+ 233               	.LVL19:
+ 174:system/asm.c  **** 
+ 175:system/asm.c  ****     // initialize stack so the task can be started by osTaskSwitchContext
+ 176:system/asm.c  ****     // task is not running, so we need to put some random values into the context
+ 177:system/asm.c  **** 
+ 178:system/asm.c  ****     // put osTaskExit on stack so when task exits by ret(i) instruction it will go "back" to that f
+ 179:system/asm.c  ****     address = (uint16_t)osTaskExit;
+ 234               		.loc 1 179 5 view .LVU72
+ 235               		.loc 1 179 13 is_stmt 0 view .LVU73
+ 236 0060 20E0      		ldi r18,lo8(gs(osTaskExit))
+ 237 0062 30E0      		ldi r19,hi8(gs(osTaskExit))
+ 238               	.LVL20:
+ 180:system/asm.c  ****     *topOfStack = (address >> 0) & 0xff;
+ 239               		.loc 1 180 5 is_stmt 1 view .LVU74
+ 240               		.loc 1 180 17 is_stmt 0 view .LVU75
+ 241 0064 1197      		sbiw r26,1
+ 242 0066 2C93      		st X,r18
+ 181:system/asm.c  ****     topOfStack--;
+ 243               		.loc 1 181 5 is_stmt 1 view .LVU76
+ 244               	.LVL21:
+ 182:system/asm.c  ****     *topOfStack = (address >> 8) & 0xff;
+ 245               		.loc 1 182 5 view .LVU77
+ 246               		.loc 1 182 17 is_stmt 0 view .LVU78
+ 247 0068 1197      		sbiw r26,1
+ 248 006a 3C93      		st X,r19
+ 183:system/asm.c  ****     topOfStack--;
+ 249               		.loc 1 183 5 is_stmt 1 view .LVU79
+ 250               	.LVL22:
+ 184:system/asm.c  **** 
+ 185:system/asm.c  ****     // put start of the stack on top since it will be fetched by ret(i) instruction of the context 
+ 186:system/asm.c  ****     address = (uint16_t)taskFunction;
+ 251               		.loc 1 186 5 view .LVU80
+ 187:system/asm.c  ****     *topOfStack = (address >> 0) & 0xff;
+ 252               		.loc 1 187 5 view .LVU81
+ 253               		.loc 1 187 17 is_stmt 0 view .LVU82
+ 254 006c 1197      		sbiw r26,1
+ 255 006e 6C93      		st X,r22
+ 188:system/asm.c  ****     topOfStack--;
+ 256               		.loc 1 188 5 is_stmt 1 view .LVU83
+ 257               	.LVL23:
+ 189:system/asm.c  ****     *topOfStack = (address >> 8) & 0xff;
+ 258               		.loc 1 189 5 view .LVU84
+ 259               		.loc 1 189 17 is_stmt 0 view .LVU85
+ 260 0070 1197      		sbiw r26,1
+ 261 0072 7C93      		st X,r23
+ 190:system/asm.c  ****     topOfStack--;
+ 262               		.loc 1 190 5 is_stmt 1 view .LVU86
+ 263               	.LVL24:
+ 191:system/asm.c  **** 
+ 192:system/asm.c  ****     // R0 and SREG (0x80 - interrupts enabled) registers
+ 193:system/asm.c  ****     *topOfStack = 0x00;
+ 264               		.loc 1 193 5 view .LVU87
+ 265               		.loc 1 193 17 is_stmt 0 view .LVU88
+ 266 0074 1197      		sbiw r26,1
+ 267 0076 1C92      		st X,__zero_reg__
+ 194:system/asm.c  ****     topOfStack--;
+ 268               		.loc 1 194 5 is_stmt 1 view .LVU89
+ 269               	.LVL25:
+ 195:system/asm.c  ****     *topOfStack = 0x80;
+ 270               		.loc 1 195 5 view .LVU90
+ 271               		.loc 1 195 17 is_stmt 0 view .LVU91
+ 272 0078 1197      		sbiw r26,1
+ 273 007a 90E8      		ldi r25,lo8(-128)
+ 274 007c 9C93      		st X,r25
+ 196:system/asm.c  ****     topOfStack--;
+ 275               		.loc 1 196 5 is_stmt 1 view .LVU92
+ 276               	.LVL26:
+ 197:system/asm.c  **** 
+ 198:system/asm.c  ****     // initialize registers R1-R23
+ 199:system/asm.c  ****     // R1 is expected to be zero
+ 200:system/asm.c  ****     *topOfStack = 0x00;
+ 277               		.loc 1 200 5 view .LVU93
+ 278               		.loc 1 200 17 is_stmt 0 view .LVU94
+ 279 007e 1197      		sbiw r26,1
+ 280 0080 1C92      		st X,__zero_reg__
+ 201:system/asm.c  ****     topOfStack--;
+ 281               		.loc 1 201 5 is_stmt 1 view .LVU95
+ 282               	.LVL27:
+ 202:system/asm.c  ****     *topOfStack = 0x02;
+ 283               		.loc 1 202 5 view .LVU96
+ 284               		.loc 1 202 17 is_stmt 0 view .LVU97
+ 285 0082 1197      		sbiw r26,1
+ 286 0084 92E0      		ldi r25,lo8(2)
+ 287 0086 9C93      		st X,r25
+ 203:system/asm.c  ****     topOfStack--;
+ 288               		.loc 1 203 5 is_stmt 1 view .LVU98
+ 289               	.LVL28:
+ 204:system/asm.c  ****     *topOfStack = 0x03;
+ 290               		.loc 1 204 5 view .LVU99
+ 291               		.loc 1 204 17 is_stmt 0 view .LVU100
+ 292 0088 1197      		sbiw r26,1
+ 293 008a 93E0      		ldi r25,lo8(3)
+ 294 008c 9C93      		st X,r25
+ 205:system/asm.c  ****     topOfStack--;
+ 295               		.loc 1 205 5 is_stmt 1 view .LVU101
+ 296               	.LVL29:
+ 206:system/asm.c  ****     *topOfStack = 0x04;
+ 297               		.loc 1 206 5 view .LVU102
+ 298               		.loc 1 206 17 is_stmt 0 view .LVU103
+ 299 008e 1197      		sbiw r26,1
+ 300 0090 94E0      		ldi r25,lo8(4)
+ 301 0092 9C93      		st X,r25
+ 207:system/asm.c  ****     topOfStack--;
+ 302               		.loc 1 207 5 is_stmt 1 view .LVU104
+ 303               	.LVL30:
+ 208:system/asm.c  ****     *topOfStack = 0x05;
+ 304               		.loc 1 208 5 view .LVU105
+ 305               		.loc 1 208 17 is_stmt 0 view .LVU106
+ 306 0094 1197      		sbiw r26,1
+ 307 0096 95E0      		ldi r25,lo8(5)
+ 308 0098 9C93      		st X,r25
+ 209:system/asm.c  ****     topOfStack--;
+ 309               		.loc 1 209 5 is_stmt 1 view .LVU107
+ 310               	.LVL31:
+ 210:system/asm.c  ****     *topOfStack = 0x06;
+ 311               		.loc 1 210 5 view .LVU108
+ 312               		.loc 1 210 17 is_stmt 0 view .LVU109
+ 313 009a 1197      		sbiw r26,1
+ 314 009c 96E0      		ldi r25,lo8(6)
+ 315 009e 9C93      		st X,r25
+ 211:system/asm.c  ****     topOfStack--;
+ 316               		.loc 1 211 5 is_stmt 1 view .LVU110
+ 317               	.LVL32:
+ 212:system/asm.c  ****     *topOfStack = 0x07;
+ 318               		.loc 1 212 5 view .LVU111
+ 319               		.loc 1 212 17 is_stmt 0 view .LVU112
+ 320 00a0 1197      		sbiw r26,1
+ 321 00a2 97E0      		ldi r25,lo8(7)
+ 322 00a4 9C93      		st X,r25
+ 213:system/asm.c  ****     topOfStack--;
+ 323               		.loc 1 213 5 is_stmt 1 view .LVU113
+ 324               	.LVL33:
+ 214:system/asm.c  ****     *topOfStack = 0x08;
+ 325               		.loc 1 214 5 view .LVU114
+ 326               		.loc 1 214 17 is_stmt 0 view .LVU115
+ 327 00a6 1197      		sbiw r26,1
+ 328 00a8 98E0      		ldi r25,lo8(8)
+ 329 00aa 9C93      		st X,r25
+ 215:system/asm.c  ****     topOfStack--;
+ 330               		.loc 1 215 5 is_stmt 1 view .LVU116
+ 331               	.LVL34:
+ 216:system/asm.c  ****     *topOfStack = 0x09;
+ 332               		.loc 1 216 5 view .LVU117
+ 333               		.loc 1 216 17 is_stmt 0 view .LVU118
+ 334 00ac 1197      		sbiw r26,1
+ 335 00ae 99E0      		ldi r25,lo8(9)
+ 336 00b0 9C93      		st X,r25
+ 217:system/asm.c  ****     topOfStack--;
+ 337               		.loc 1 217 5 is_stmt 1 view .LVU119
+ 338               	.LVL35:
+ 218:system/asm.c  ****     *topOfStack = 0x10;
+ 339               		.loc 1 218 5 view .LVU120
+ 340               		.loc 1 218 17 is_stmt 0 view .LVU121
+ 341 00b2 1197      		sbiw r26,1
+ 342 00b4 90E1      		ldi r25,lo8(16)
+ 343 00b6 9C93      		st X,r25
+ 219:system/asm.c  ****     topOfStack--;
+ 344               		.loc 1 219 5 is_stmt 1 view .LVU122
+ 345               	.LVL36:
+ 220:system/asm.c  ****     *topOfStack = 0x11;
+ 346               		.loc 1 220 5 view .LVU123
+ 347               		.loc 1 220 17 is_stmt 0 view .LVU124
+ 348 00b8 1197      		sbiw r26,1
+ 349 00ba 91E1      		ldi r25,lo8(17)
+ 350 00bc 9C93      		st X,r25
+ 221:system/asm.c  ****     topOfStack--;
+ 351               		.loc 1 221 5 is_stmt 1 view .LVU125
+ 352               	.LVL37:
+ 222:system/asm.c  ****     *topOfStack = 0x12;
+ 353               		.loc 1 222 5 view .LVU126
+ 354               		.loc 1 222 17 is_stmt 0 view .LVU127
+ 355 00be 1197      		sbiw r26,1
+ 356 00c0 92E1      		ldi r25,lo8(18)
+ 357 00c2 9C93      		st X,r25
+ 223:system/asm.c  ****     topOfStack--;
+ 358               		.loc 1 223 5 is_stmt 1 view .LVU128
+ 359               	.LVL38:
+ 224:system/asm.c  ****     *topOfStack = 0x13;
+ 360               		.loc 1 224 5 view .LVU129
+ 361               		.loc 1 224 17 is_stmt 0 view .LVU130
+ 362 00c4 1197      		sbiw r26,1
+ 363 00c6 8C93      		st X,r24
+ 225:system/asm.c  ****     topOfStack--;
+ 364               		.loc 1 225 5 is_stmt 1 view .LVU131
+ 365               	.LVL39:
+ 226:system/asm.c  ****     *topOfStack = 0x14;
+ 366               		.loc 1 226 5 view .LVU132
+ 367               		.loc 1 226 17 is_stmt 0 view .LVU133
+ 368 00c8 1197      		sbiw r26,1
+ 369 00ca 84E1      		ldi r24,lo8(20)
+ 370 00cc 8C93      		st X,r24
+ 227:system/asm.c  ****     topOfStack--;
+ 371               		.loc 1 227 5 is_stmt 1 view .LVU134
+ 372               	.LVL40:
+ 228:system/asm.c  ****     *topOfStack = 0x15;
+ 373               		.loc 1 228 5 view .LVU135
+ 374               		.loc 1 228 17 is_stmt 0 view .LVU136
+ 375 00ce 1197      		sbiw r26,1
+ 376 00d0 85E1      		ldi r24,lo8(21)
+ 377 00d2 8C93      		st X,r24
+ 229:system/asm.c  ****     topOfStack--;
+ 378               		.loc 1 229 5 is_stmt 1 view .LVU137
+ 379               	.LVL41:
+ 230:system/asm.c  ****     *topOfStack = 0x16;
+ 380               		.loc 1 230 5 view .LVU138
+ 381               		.loc 1 230 17 is_stmt 0 view .LVU139
+ 382 00d4 1197      		sbiw r26,1
+ 383 00d6 86E1      		ldi r24,lo8(22)
+ 384 00d8 8C93      		st X,r24
+ 231:system/asm.c  ****     topOfStack--;
+ 385               		.loc 1 231 5 is_stmt 1 view .LVU140
+ 386               	.LVL42:
+ 232:system/asm.c  ****     *topOfStack = 0x17;
+ 387               		.loc 1 232 5 view .LVU141
+ 388               		.loc 1 232 17 is_stmt 0 view .LVU142
+ 389 00da 1197      		sbiw r26,1
+ 390 00dc 87E1      		ldi r24,lo8(23)
+ 391 00de 8C93      		st X,r24
+ 233:system/asm.c  ****     topOfStack--;
+ 392               		.loc 1 233 5 is_stmt 1 view .LVU143
+ 393               	.LVL43:
+ 234:system/asm.c  ****     *topOfStack = 0x18;
+ 394               		.loc 1 234 5 view .LVU144
+ 395               		.loc 1 234 17 is_stmt 0 view .LVU145
+ 396 00e0 1197      		sbiw r26,1
+ 397 00e2 88E1      		ldi r24,lo8(24)
+ 398 00e4 8C93      		st X,r24
+ 235:system/asm.c  ****     topOfStack--;
+ 399               		.loc 1 235 5 is_stmt 1 view .LVU146
+ 400               	.LVL44:
+ 236:system/asm.c  ****     *topOfStack = 0x19;
+ 401               		.loc 1 236 5 view .LVU147
+ 402               		.loc 1 236 17 is_stmt 0 view .LVU148
+ 403 00e6 1197      		sbiw r26,1
+ 404 00e8 89E1      		ldi r24,lo8(25)
+ 405 00ea 8C93      		st X,r24
+ 237:system/asm.c  ****     topOfStack--;
+ 406               		.loc 1 237 5 is_stmt 1 view .LVU149
+ 407               	.LVL45:
+ 238:system/asm.c  ****     *topOfStack = 0x20;
+ 408               		.loc 1 238 5 view .LVU150
+ 409               		.loc 1 238 17 is_stmt 0 view .LVU151
+ 410 00ec 1197      		sbiw r26,1
+ 411 00ee 80E2      		ldi r24,lo8(32)
+ 412 00f0 8C93      		st X,r24
+ 239:system/asm.c  ****     topOfStack--;
+ 413               		.loc 1 239 5 is_stmt 1 view .LVU152
+ 414               	.LVL46:
+ 240:system/asm.c  ****     *topOfStack = 0x21;
+ 415               		.loc 1 240 5 view .LVU153
+ 416               		.loc 1 240 17 is_stmt 0 view .LVU154
+ 417 00f2 1197      		sbiw r26,1
+ 418 00f4 81E2      		ldi r24,lo8(33)
+ 419 00f6 8C93      		st X,r24
+ 241:system/asm.c  ****     topOfStack--;
+ 420               		.loc 1 241 5 is_stmt 1 view .LVU155
+ 421               	.LVL47:
+ 242:system/asm.c  ****     *topOfStack = 0x22;
+ 422               		.loc 1 242 5 view .LVU156
+ 423               		.loc 1 242 17 is_stmt 0 view .LVU157
+ 424 00f8 1197      		sbiw r26,1
+ 425 00fa 82E2      		ldi r24,lo8(34)
+ 426 00fc 8C93      		st X,r24
+ 243:system/asm.c  ****     topOfStack--;
+ 427               		.loc 1 243 5 is_stmt 1 view .LVU158
+ 428               	.LVL48:
+ 244:system/asm.c  ****     *topOfStack = 0x23;
+ 429               		.loc 1 244 5 view .LVU159
+ 430               		.loc 1 244 17 is_stmt 0 view .LVU160
+ 431 00fe 1197      		sbiw r26,1
+ 432 0100 83E2      		ldi r24,lo8(35)
+ 433 0102 8C93      		st X,r24
+ 245:system/asm.c  ****     topOfStack--;
+ 434               		.loc 1 245 5 is_stmt 1 view .LVU161
+ 435               	.LVL49:
+ 246:system/asm.c  **** 
+ 247:system/asm.c  ****     // initialize R24-R25
+ 248:system/asm.c  ****     // which is a function argument
+ 249:system/asm.c  ****     address = (uint16_t)taskParameter;
+ 436               		.loc 1 249 5 view .LVU162
+ 250:system/asm.c  ****     *topOfStack = (address >> 0) & 0xff;
+ 437               		.loc 1 250 5 view .LVU163
+ 438               		.loc 1 250 17 is_stmt 0 view .LVU164
+ 439 0104 1197      		sbiw r26,1
+ 440 0106 4C93      		st X,r20
+ 251:system/asm.c  ****     topOfStack--;
+ 441               		.loc 1 251 5 is_stmt 1 view .LVU165
+ 442               	.LVL50:
+ 252:system/asm.c  ****     *topOfStack = (address >> 8) & 0xff;
+ 443               		.loc 1 252 5 view .LVU166
+ 444               		.loc 1 252 17 is_stmt 0 view .LVU167
+ 445 0108 1197      		sbiw r26,1
+ 446 010a 5C93      		st X,r21
+ 253:system/asm.c  ****     topOfStack--;
+ 447               		.loc 1 253 5 is_stmt 1 view .LVU168
+ 448               	.LVL51:
+ 254:system/asm.c  **** 
+ 255:system/asm.c  ****     // initialize R26-R31
+ 256:system/asm.c  ****     *topOfStack = 0x26;
+ 449               		.loc 1 256 5 view .LVU169
+ 450               		.loc 1 256 17 is_stmt 0 view .LVU170
+ 451 010c 1197      		sbiw r26,1
+ 452 010e 86E2      		ldi r24,lo8(38)
+ 453 0110 8C93      		st X,r24
+ 257:system/asm.c  ****     topOfStack--;
+ 454               		.loc 1 257 5 is_stmt 1 view .LVU171
+ 455               	.LVL52:
+ 258:system/asm.c  ****     *topOfStack = 0x27;
+ 456               		.loc 1 258 5 view .LVU172
+ 457               		.loc 1 258 17 is_stmt 0 view .LVU173
+ 458 0112 1197      		sbiw r26,1
+ 459 0114 87E2      		ldi r24,lo8(39)
+ 460 0116 8C93      		st X,r24
+ 259:system/asm.c  ****     topOfStack--;
+ 461               		.loc 1 259 5 is_stmt 1 view .LVU174
+ 462               	.LVL53:
+ 260:system/asm.c  ****     *topOfStack = 0x28;
+ 463               		.loc 1 260 5 view .LVU175
+ 464               		.loc 1 260 17 is_stmt 0 view .LVU176
+ 465 0118 1197      		sbiw r26,1
+ 466 011a 88E2      		ldi r24,lo8(40)
+ 467 011c 8C93      		st X,r24
+ 261:system/asm.c  ****     topOfStack--;
+ 468               		.loc 1 261 5 is_stmt 1 view .LVU177
+ 469               	.LVL54:
+ 262:system/asm.c  ****     *topOfStack = 0x29;
+ 470               		.loc 1 262 5 view .LVU178
+ 471               		.loc 1 262 17 is_stmt 0 view .LVU179
+ 472 011e 1197      		sbiw r26,1
+ 473 0120 89E2      		ldi r24,lo8(41)
+ 474 0122 8C93      		st X,r24
+ 263:system/asm.c  ****     topOfStack--;
+ 475               		.loc 1 263 5 is_stmt 1 view .LVU180
+ 476               	.LVL55:
+ 264:system/asm.c  ****     *topOfStack = 0x30;
+ 477               		.loc 1 264 5 view .LVU181
+ 478               		.loc 1 264 17 is_stmt 0 view .LVU182
+ 479 0124 1197      		sbiw r26,1
+ 480 0126 80E3      		ldi r24,lo8(48)
+ 481 0128 8C93      		st X,r24
+ 265:system/asm.c  ****     topOfStack--;
+ 482               		.loc 1 265 5 is_stmt 1 view .LVU183
+ 483               	.LVL56:
+ 266:system/asm.c  ****     *topOfStack = 0x31;
+ 484               		.loc 1 266 5 view .LVU184
+ 485               		.loc 1 266 17 is_stmt 0 view .LVU185
+ 486 012a 1197      		sbiw r26,1
+ 487 012c 81E3      		ldi r24,lo8(49)
+ 488 012e 8C93      		st X,r24
+ 267:system/asm.c  ****     topOfStack--;
+ 489               		.loc 1 267 5 is_stmt 1 view .LVU186
+ 490               	.LVL57:
+ 268:system/asm.c  **** 
+ 269:system/asm.c  ****     return topOfStack;
+ 491               		.loc 1 269 5 view .LVU187
+ 270:system/asm.c  **** }
+ 492               		.loc 1 270 1 is_stmt 0 view .LVU188
+ 493 0130 CF01      		movw r24,r30
+ 494 0132 8797      		sbiw r24,39
+ 495               	.LVL58:
+ 496               	/* epilogue start */
+ 497               		.loc 1 270 1 view .LVU189
+ 498 0134 0895      		ret
+ 499               		.cfi_endproc
+ 500               	.LFE19:
+ 502               	.global	osNonSavableYield
+ 504               	osNonSavableYield:
+ 505               	.LFB20:
+ 271:system/asm.c  **** 
+ 272:system/asm.c  **** void osNonSavableYield(void) __attribute__ ((naked));
+ 273:system/asm.c  **** void osNonSavableYield(void)
+ 274:system/asm.c  **** {
+ 506               		.loc 1 274 1 is_stmt 1 view -0
+ 507               		.cfi_startproc
+ 508               	/* prologue: naked */
+ 509               	/* frame size = 0 */
+ 510               	/* stack size = 0 */
+ 511               	.L__stack_usage = 0
+ 275:system/asm.c  ****     // do not save context since there is no "current" task
+ 276:system/asm.c  ****     // we want to start the first task right away
+ 277:system/asm.c  ****     osContextSwitch(1,0);
+ 512               		.loc 1 277 5 view .LVU191
+ 513 0136 60E0      		ldi r22,0
+ 514 0138 81E0      		ldi r24,lo8(1)
+ 515 013a 0E94 0000 		call osContextSwitch
+ 516               	.LVL59:
+ 278:system/asm.c  ****     RESTORE_CONTEXT
+ 517               		.loc 1 278 5 view .LVU192
+ 518               	/* #APP */
+ 519               	 ;  278 "system/asm.c" 1
+ 520 013e A091 0000 		lds  r26, osCurrentTask        
+ 521 0142 B091 0000 		lds  r27, osCurrentTask + 1    
+ 522 0146 CD91      		ld    r28, x+                  
+ 523 0148 CDBF      		out  __SP_L__, r28             
+ 524 014a DD91      		ld    r29, x+                  
+ 525 014c DEBF      		out  __SP_H__, r29             
+ 526 014e FF91      		pop  r31                       
+ 527 0150 EF91      		pop  r30                       
+ 528 0152 DF91      		pop  r29                       
+ 529 0154 CF91      		pop  r28                       
+ 530 0156 BF91      		pop  r27                       
+ 531 0158 AF91      		pop  r26                       
+ 532 015a 9F91      		pop  r25                       
+ 533 015c 8F91      		pop  r24                       
+ 534 015e 7F91      		pop  r23                       
+ 535 0160 6F91      		pop  r22                       
+ 536 0162 5F91      		pop  r21                       
+ 537 0164 4F91      		pop  r20                       
+ 538 0166 3F91      		pop  r19                       
+ 539 0168 2F91      		pop  r18                       
+ 540 016a 1F91      		pop  r17                       
+ 541 016c 0F91      		pop  r16                       
+ 542 016e FF90      		pop  r15                       
+ 543 0170 EF90      		pop  r14                       
+ 544 0172 DF90      		pop  r13                       
+ 545 0174 CF90      		pop  r12                       
+ 546 0176 BF90      		pop  r11                       
+ 547 0178 AF90      		pop  r10                       
+ 548 017a 9F90      		pop  r9                        
+ 549 017c 8F90      		pop  r8                        
+ 550 017e 7F90      		pop  r7                        
+ 551 0180 6F90      		pop  r6                        
+ 552 0182 5F90      		pop  r5                        
+ 553 0184 4F90      		pop  r4                        
+ 554 0186 3F90      		pop  r3                        
+ 555 0188 2F90      		pop  r2                        
+ 556 018a 1F90      		pop  r1                        
+ 557 018c 0F90      		pop  r0                        
+ 558 018e 0FBE      		out  __SREG__, r0              
+ 559 0190 0F90      		pop  r0                        
+ 560               		
+ 561               	 ;  0 "" 2
+ 279:system/asm.c  **** 
+ 280:system/asm.c  ****     // we will jump to the first task on the list
+ 281:system/asm.c  ****     asm volatile("ret");
+ 562               		.loc 1 281 5 view .LVU193
+ 563               	 ;  281 "system/asm.c" 1
+ 564 0192 0895      		ret
+ 565               	 ;  0 "" 2
+ 566               	/* #NOAPP */
+ 567               	/* epilogue start */
+ 282:system/asm.c  **** }
+ 568               		.loc 1 282 1 is_stmt 0 view .LVU194
+ 569               		.cfi_endproc
+ 570               	.LFE20:
+ 572               	.global	osResumableYield
+ 574               	osResumableYield:
+ 575               	.LFB21:
+ 283:system/asm.c  **** 
+ 284:system/asm.c  **** void osResumableYield(void) __attribute__ ((naked));
+ 285:system/asm.c  **** void osResumableYield(void)
+ 286:system/asm.c  **** {
+ 576               		.loc 1 286 1 is_stmt 1 view -0
+ 577               		.cfi_startproc
+ 578               	/* prologue: naked */
+ 579               	/* frame size = 0 */
+ 580               	/* stack size = 0 */
+ 581               	.L__stack_usage = 0
+ 287:system/asm.c  ****     SAVE_CONTEXT
+ 582               		.loc 1 287 5 view .LVU196
+ 583               	/* #APP */
+ 584               	 ;  287 "system/asm.c" 1
+ 585 0194 0F92      		push  r0                       
+ 586 0196 0FB6      		in    r0, __SREG__             
+ 587 0198 F894      		cli                            
+ 588 019a 0F92      		push  r0                       
+ 589 019c 1F92      		push  r1                       
+ 590 019e 1124      		clr  r1                        
+ 591 01a0 2F92      		push  r2                       
+ 592 01a2 3F92      		push  r3                       
+ 593 01a4 4F92      		push  r4                       
+ 594 01a6 5F92      		push  r5                       
+ 595 01a8 6F92      		push  r6                       
+ 596 01aa 7F92      		push  r7                       
+ 597 01ac 8F92      		push  r8                       
+ 598 01ae 9F92      		push  r9                       
+ 599 01b0 AF92      		push  r10                      
+ 600 01b2 BF92      		push  r11                      
+ 601 01b4 CF92      		push  r12                      
+ 602 01b6 DF92      		push  r13                      
+ 603 01b8 EF92      		push  r14                      
+ 604 01ba FF92      		push  r15                      
+ 605 01bc 0F93      		push  r16                      
+ 606 01be 1F93      		push  r17                      
+ 607 01c0 2F93      		push  r18                      
+ 608 01c2 3F93      		push  r19                      
+ 609 01c4 4F93      		push  r20                      
+ 610 01c6 5F93      		push  r21                      
+ 611 01c8 6F93      		push  r22                      
+ 612 01ca 7F93      		push  r23                      
+ 613 01cc 8F93      		push  r24                      
+ 614 01ce 9F93      		push  r25                      
+ 615 01d0 AF93      		push  r26                      
+ 616 01d2 BF93      		push  r27                      
+ 617 01d4 CF93      		push  r28                      
+ 618 01d6 DF93      		push  r29                      
+ 619 01d8 EF93      		push  r30                      
+ 620 01da FF93      		push  r31                      
+ 621 01dc A091 0000 		lds  r26, osCurrentTask        
+ 622 01e0 B091 0000 		lds  r27, osCurrentTask + 1    
+ 623 01e4 0DB6      		in    r0, __SP_L__             
+ 624 01e6 0D92      		st    x+, r0                   
+ 625 01e8 0EB6      		in    r0, __SP_H__             
+ 626 01ea 0D92      		st    x+, r0                   
+ 627               		
+ 628               	 ;  0 "" 2
+ 288:system/asm.c  ****     osContextSwitch(1,0);
+ 629               		.loc 1 288 5 view .LVU197
+ 630               	/* #NOAPP */
+ 631 01ec 60E0      		ldi r22,0
+ 632 01ee 81E0      		ldi r24,lo8(1)
+ 633 01f0 0E94 0000 		call osContextSwitch
+ 634               	.LVL60:
+ 289:system/asm.c  ****     RESTORE_CONTEXT
+ 635               		.loc 1 289 5 view .LVU198
+ 636               	/* #APP */
+ 637               	 ;  289 "system/asm.c" 1
+ 638 01f4 A091 0000 		lds  r26, osCurrentTask        
+ 639 01f8 B091 0000 		lds  r27, osCurrentTask + 1    
+ 640 01fc CD91      		ld    r28, x+                  
+ 641 01fe CDBF      		out  __SP_L__, r28             
+ 642 0200 DD91      		ld    r29, x+                  
+ 643 0202 DEBF      		out  __SP_H__, r29             
+ 644 0204 FF91      		pop  r31                       
+ 645 0206 EF91      		pop  r30                       
+ 646 0208 DF91      		pop  r29                       
+ 647 020a CF91      		pop  r28                       
+ 648 020c BF91      		pop  r27                       
+ 649 020e AF91      		pop  r26                       
+ 650 0210 9F91      		pop  r25                       
+ 651 0212 8F91      		pop  r24                       
+ 652 0214 7F91      		pop  r23                       
+ 653 0216 6F91      		pop  r22                       
+ 654 0218 5F91      		pop  r21                       
+ 655 021a 4F91      		pop  r20                       
+ 656 021c 3F91      		pop  r19                       
+ 657 021e 2F91      		pop  r18                       
+ 658 0220 1F91      		pop  r17                       
+ 659 0222 0F91      		pop  r16                       
+ 660 0224 FF90      		pop  r15                       
+ 661 0226 EF90      		pop  r14                       
+ 662 0228 DF90      		pop  r13                       
+ 663 022a CF90      		pop  r12                       
+ 664 022c BF90      		pop  r11                       
+ 665 022e AF90      		pop  r10                       
+ 666 0230 9F90      		pop  r9                        
+ 667 0232 8F90      		pop  r8                        
+ 668 0234 7F90      		pop  r7                        
+ 669 0236 6F90      		pop  r6                        
+ 670 0238 5F90      		pop  r5                        
+ 671 023a 4F90      		pop  r4                        
+ 672 023c 3F90      		pop  r3                        
+ 673 023e 2F90      		pop  r2                        
+ 674 0240 1F90      		pop  r1                        
+ 675 0242 0F90      		pop  r0                        
+ 676 0244 0FBE      		out  __SREG__, r0              
+ 677 0246 0F90      		pop  r0                        
+ 678               		
+ 679               	 ;  0 "" 2
+ 290:system/asm.c  **** 
+ 291:system/asm.c  ****     asm volatile("ret");
+ 680               		.loc 1 291 5 view .LVU199
+ 681               	 ;  291 "system/asm.c" 1
+ 682 0248 0895      		ret
+ 683               	 ;  0 "" 2
+ 684               	/* #NOAPP */
+ 685               	/* epilogue start */
+ 292:system/asm.c  **** }
+ 686               		.loc 1 292 1 is_stmt 0 view .LVU200
+ 687               		.cfi_endproc
+ 688               	.LFE21:
+ 690               	.global	osNonResumableYield
+ 692               	osNonResumableYield:
+ 693               	.LFB22:
+ 293:system/asm.c  **** 
+ 294:system/asm.c  **** void osNonResumableYield(void) __attribute__ ((naked));
+ 295:system/asm.c  **** void osNonResumableYield(void)
+ 296:system/asm.c  **** {
+ 694               		.loc 1 296 1 is_stmt 1 view -0
+ 695               		.cfi_startproc
+ 696               	/* prologue: naked */
+ 697               	/* frame size = 0 */
+ 698               	/* stack size = 0 */
+ 699               	.L__stack_usage = 0
+ 297:system/asm.c  ****     SAVE_CONTEXT
+ 700               		.loc 1 297 5 view .LVU202
+ 701               	/* #APP */
+ 702               	 ;  297 "system/asm.c" 1
+ 703 024a 0F92      		push  r0                       
+ 704 024c 0FB6      		in    r0, __SREG__             
+ 705 024e F894      		cli                            
+ 706 0250 0F92      		push  r0                       
+ 707 0252 1F92      		push  r1                       
+ 708 0254 1124      		clr  r1                        
+ 709 0256 2F92      		push  r2                       
+ 710 0258 3F92      		push  r3                       
+ 711 025a 4F92      		push  r4                       
+ 712 025c 5F92      		push  r5                       
+ 713 025e 6F92      		push  r6                       
+ 714 0260 7F92      		push  r7                       
+ 715 0262 8F92      		push  r8                       
+ 716 0264 9F92      		push  r9                       
+ 717 0266 AF92      		push  r10                      
+ 718 0268 BF92      		push  r11                      
+ 719 026a CF92      		push  r12                      
+ 720 026c DF92      		push  r13                      
+ 721 026e EF92      		push  r14                      
+ 722 0270 FF92      		push  r15                      
+ 723 0272 0F93      		push  r16                      
+ 724 0274 1F93      		push  r17                      
+ 725 0276 2F93      		push  r18                      
+ 726 0278 3F93      		push  r19                      
+ 727 027a 4F93      		push  r20                      
+ 728 027c 5F93      		push  r21                      
+ 729 027e 6F93      		push  r22                      
+ 730 0280 7F93      		push  r23                      
+ 731 0282 8F93      		push  r24                      
+ 732 0284 9F93      		push  r25                      
+ 733 0286 AF93      		push  r26                      
+ 734 0288 BF93      		push  r27                      
+ 735 028a CF93      		push  r28                      
+ 736 028c DF93      		push  r29                      
+ 737 028e EF93      		push  r30                      
+ 738 0290 FF93      		push  r31                      
+ 739 0292 A091 0000 		lds  r26, osCurrentTask        
+ 740 0296 B091 0000 		lds  r27, osCurrentTask + 1    
+ 741 029a 0DB6      		in    r0, __SP_L__             
+ 742 029c 0D92      		st    x+, r0                   
+ 743 029e 0EB6      		in    r0, __SP_H__             
+ 744 02a0 0D92      		st    x+, r0                   
+ 745               		
+ 746               	 ;  0 "" 2
+ 298:system/asm.c  ****     osContextSwitch(0,0);
+ 747               		.loc 1 298 5 view .LVU203
+ 748               	/* #NOAPP */
+ 749 02a2 60E0      		ldi r22,0
+ 750 02a4 80E0      		ldi r24,0
+ 751 02a6 0E94 0000 		call osContextSwitch
+ 752               	.LVL61:
+ 299:system/asm.c  ****     RESTORE_CONTEXT
+ 753               		.loc 1 299 5 view .LVU204
+ 754               	/* #APP */
+ 755               	 ;  299 "system/asm.c" 1
+ 756 02aa A091 0000 		lds  r26, osCurrentTask        
+ 757 02ae B091 0000 		lds  r27, osCurrentTask + 1    
+ 758 02b2 CD91      		ld    r28, x+                  
+ 759 02b4 CDBF      		out  __SP_L__, r28             
+ 760 02b6 DD91      		ld    r29, x+                  
+ 761 02b8 DEBF      		out  __SP_H__, r29             
+ 762 02ba FF91      		pop  r31                       
+ 763 02bc EF91      		pop  r30                       
+ 764 02be DF91      		pop  r29                       
+ 765 02c0 CF91      		pop  r28                       
+ 766 02c2 BF91      		pop  r27                       
+ 767 02c4 AF91      		pop  r26                       
+ 768 02c6 9F91      		pop  r25                       
+ 769 02c8 8F91      		pop  r24                       
+ 770 02ca 7F91      		pop  r23                       
+ 771 02cc 6F91      		pop  r22                       
+ 772 02ce 5F91      		pop  r21                       
+ 773 02d0 4F91      		pop  r20                       
+ 774 02d2 3F91      		pop  r19                       
+ 775 02d4 2F91      		pop  r18                       
+ 776 02d6 1F91      		pop  r17                       
+ 777 02d8 0F91      		pop  r16                       
+ 778 02da FF90      		pop  r15                       
+ 779 02dc EF90      		pop  r14                       
+ 780 02de DF90      		pop  r13                       
+ 781 02e0 CF90      		pop  r12                       
+ 782 02e2 BF90      		pop  r11                       
+ 783 02e4 AF90      		pop  r10                       
+ 784 02e6 9F90      		pop  r9                        
+ 785 02e8 8F90      		pop  r8                        
+ 786 02ea 7F90      		pop  r7                        
+ 787 02ec 6F90      		pop  r6                        
+ 788 02ee 5F90      		pop  r5                        
+ 789 02f0 4F90      		pop  r4                        
+ 790 02f2 3F90      		pop  r3                        
+ 791 02f4 2F90      		pop  r2                        
+ 792 02f6 1F90      		pop  r1                        
+ 793 02f8 0F90      		pop  r0                        
+ 794 02fa 0FBE      		out  __SREG__, r0              
+ 795 02fc 0F90      		pop  r0                        
+ 796               		
+ 797               	 ;  0 "" 2
+ 300:system/asm.c  **** 
+ 301:system/asm.c  ****     asm volatile("ret");
+ 798               		.loc 1 301 5 view .LVU205
+ 799               	 ;  301 "system/asm.c" 1
+ 800 02fe 0895      		ret
+ 801               	 ;  0 "" 2
+ 802               	/* #NOAPP */
+ 803               	/* epilogue start */
+ 302:system/asm.c  **** }
+ 804               		.loc 1 302 1 is_stmt 0 view .LVU206
+ 805               		.cfi_endproc
+ 806               	.LFE22:
+ 808               	.global	osAsmYieldFromTick
+ 810               	osAsmYieldFromTick:
+ 811               	.LFB23:
+ 303:system/asm.c  **** 
+ 304:system/asm.c  **** void osAsmYieldFromTick(void) __attribute__ ((naked));
+ 305:system/asm.c  **** void osAsmYieldFromTick()
+ 306:system/asm.c  **** {
+ 812               		.loc 1 306 1 is_stmt 1 view -0
+ 813               		.cfi_startproc
+ 814               	/* prologue: naked */
+ 815               	/* frame size = 0 */
+ 816               	/* stack size = 0 */
+ 817               	.L__stack_usage = 0
+ 307:system/asm.c  ****     SAVE_CONTEXT
+ 818               		.loc 1 307 5 view .LVU208
+ 819               	/* #APP */
+ 820               	 ;  307 "system/asm.c" 1
+ 821 0300 0F92      		push  r0                       
+ 822 0302 0FB6      		in    r0, __SREG__             
+ 823 0304 F894      		cli                            
+ 824 0306 0F92      		push  r0                       
+ 825 0308 1F92      		push  r1                       
+ 826 030a 1124      		clr  r1                        
+ 827 030c 2F92      		push  r2                       
+ 828 030e 3F92      		push  r3                       
+ 829 0310 4F92      		push  r4                       
+ 830 0312 5F92      		push  r5                       
+ 831 0314 6F92      		push  r6                       
+ 832 0316 7F92      		push  r7                       
+ 833 0318 8F92      		push  r8                       
+ 834 031a 9F92      		push  r9                       
+ 835 031c AF92      		push  r10                      
+ 836 031e BF92      		push  r11                      
+ 837 0320 CF92      		push  r12                      
+ 838 0322 DF92      		push  r13                      
+ 839 0324 EF92      		push  r14                      
+ 840 0326 FF92      		push  r15                      
+ 841 0328 0F93      		push  r16                      
+ 842 032a 1F93      		push  r17                      
+ 843 032c 2F93      		push  r18                      
+ 844 032e 3F93      		push  r19                      
+ 845 0330 4F93      		push  r20                      
+ 846 0332 5F93      		push  r21                      
+ 847 0334 6F93      		push  r22                      
+ 848 0336 7F93      		push  r23                      
+ 849 0338 8F93      		push  r24                      
+ 850 033a 9F93      		push  r25                      
+ 851 033c AF93      		push  r26                      
+ 852 033e BF93      		push  r27                      
+ 853 0340 CF93      		push  r28                      
+ 854 0342 DF93      		push  r29                      
+ 855 0344 EF93      		push  r30                      
+ 856 0346 FF93      		push  r31                      
+ 857 0348 A091 0000 		lds  r26, osCurrentTask        
+ 858 034c B091 0000 		lds  r27, osCurrentTask + 1    
+ 859 0350 0DB6      		in    r0, __SP_L__             
+ 860 0352 0D92      		st    x+, r0                   
+ 861 0354 0EB6      		in    r0, __SP_H__             
+ 862 0356 0D92      		st    x+, r0                   
+ 863               		
+ 864               	 ;  0 "" 2
+ 308:system/asm.c  ****     osContextSwitch(1,1);
+ 865               		.loc 1 308 5 view .LVU209
+ 866               	/* #NOAPP */
+ 867 0358 61E0      		ldi r22,lo8(1)
+ 868 035a 81E0      		ldi r24,lo8(1)
+ 869 035c 0E94 0000 		call osContextSwitch
+ 870               	.LVL62:
+ 309:system/asm.c  ****     RESTORE_CONTEXT
+ 871               		.loc 1 309 5 view .LVU210
+ 872               	/* #APP */
+ 873               	 ;  309 "system/asm.c" 1
+ 874 0360 A091 0000 		lds  r26, osCurrentTask        
+ 875 0364 B091 0000 		lds  r27, osCurrentTask + 1    
+ 876 0368 CD91      		ld    r28, x+                  
+ 877 036a CDBF      		out  __SP_L__, r28             
+ 878 036c DD91      		ld    r29, x+                  
+ 879 036e DEBF      		out  __SP_H__, r29             
+ 880 0370 FF91      		pop  r31                       
+ 881 0372 EF91      		pop  r30                       
+ 882 0374 DF91      		pop  r29                       
+ 883 0376 CF91      		pop  r28                       
+ 884 0378 BF91      		pop  r27                       
+ 885 037a AF91      		pop  r26                       
+ 886 037c 9F91      		pop  r25                       
+ 887 037e 8F91      		pop  r24                       
+ 888 0380 7F91      		pop  r23                       
+ 889 0382 6F91      		pop  r22                       
+ 890 0384 5F91      		pop  r21                       
+ 891 0386 4F91      		pop  r20                       
+ 892 0388 3F91      		pop  r19                       
+ 893 038a 2F91      		pop  r18                       
+ 894 038c 1F91      		pop  r17                       
+ 895 038e 0F91      		pop  r16                       
+ 896 0390 FF90      		pop  r15                       
+ 897 0392 EF90      		pop  r14                       
+ 898 0394 DF90      		pop  r13                       
+ 899 0396 CF90      		pop  r12                       
+ 900 0398 BF90      		pop  r11                       
+ 901 039a AF90      		pop  r10                       
+ 902 039c 9F90      		pop  r9                        
+ 903 039e 8F90      		pop  r8                        
+ 904 03a0 7F90      		pop  r7                        
+ 905 03a2 6F90      		pop  r6                        
+ 906 03a4 5F90      		pop  r5                        
+ 907 03a6 4F90      		pop  r4                        
+ 908 03a8 3F90      		pop  r3                        
+ 909 03aa 2F90      		pop  r2                        
+ 910 03ac 1F90      		pop  r1                        
+ 911 03ae 0F90      		pop  r0                        
+ 912 03b0 0FBE      		out  __SREG__, r0              
+ 913 03b2 0F90      		pop  r0                        
+ 914               		
+ 915               	 ;  0 "" 2
+ 310:system/asm.c  **** 
+ 311:system/asm.c  ****     asm volatile("ret");
+ 916               		.loc 1 311 5 view .LVU211
+ 917               	 ;  311 "system/asm.c" 1
+ 918 03b4 0895      		ret
+ 919               	 ;  0 "" 2
+ 920               	/* #NOAPP */
+ 921               	/* epilogue start */
+ 312:system/asm.c  **** }
+ 922               		.loc 1 312 1 is_stmt 0 view .LVU212
+ 923               		.cfi_endproc
+ 924               	.LFE23:
+ 926               	.global	__vector_11
+ 928               	__vector_11:
+ 929               	.LFB24:
+ 313:system/asm.c  **** 
+ 314:system/asm.c  **** ISR (TIMER1_COMPA_vect){
+ 930               		.loc 1 314 24 is_stmt 1 view -0
+ 931               		.cfi_startproc
+ 932 03b6 1F92      		push r1
+ 933               	.LCFI0:
+ 934               		.cfi_def_cfa_offset 3
+ 935               		.cfi_offset 1, -2
+ 936 03b8 0F92      		push r0
+ 937               	.LCFI1:
+ 938               		.cfi_def_cfa_offset 4
+ 939               		.cfi_offset 0, -3
+ 940 03ba 0FB6      		in r0,__SREG__
+ 941 03bc 0F92      		push r0
+ 942 03be 1124      		clr __zero_reg__
+ 943 03c0 2F93      		push r18
+ 944               	.LCFI2:
+ 945               		.cfi_def_cfa_offset 5
+ 946               		.cfi_offset 18, -4
+ 947 03c2 3F93      		push r19
+ 948               	.LCFI3:
+ 949               		.cfi_def_cfa_offset 6
+ 950               		.cfi_offset 19, -5
+ 951 03c4 4F93      		push r20
+ 952               	.LCFI4:
+ 953               		.cfi_def_cfa_offset 7
+ 954               		.cfi_offset 20, -6
+ 955 03c6 5F93      		push r21
+ 956               	.LCFI5:
+ 957               		.cfi_def_cfa_offset 8
+ 958               		.cfi_offset 21, -7
+ 959 03c8 6F93      		push r22
+ 960               	.LCFI6:
+ 961               		.cfi_def_cfa_offset 9
+ 962               		.cfi_offset 22, -8
+ 963 03ca 7F93      		push r23
+ 964               	.LCFI7:
+ 965               		.cfi_def_cfa_offset 10
+ 966               		.cfi_offset 23, -9
+ 967 03cc 8F93      		push r24
+ 968               	.LCFI8:
+ 969               		.cfi_def_cfa_offset 11
+ 970               		.cfi_offset 24, -10
+ 971 03ce 9F93      		push r25
+ 972               	.LCFI9:
+ 973               		.cfi_def_cfa_offset 12
+ 974               		.cfi_offset 25, -11
+ 975 03d0 AF93      		push r26
+ 976               	.LCFI10:
+ 977               		.cfi_def_cfa_offset 13
+ 978               		.cfi_offset 26, -12
+ 979 03d2 BF93      		push r27
+ 980               	.LCFI11:
+ 981               		.cfi_def_cfa_offset 14
+ 982               		.cfi_offset 27, -13
+ 983 03d4 EF93      		push r30
+ 984               	.LCFI12:
+ 985               		.cfi_def_cfa_offset 15
+ 986               		.cfi_offset 30, -14
+ 987 03d6 FF93      		push r31
+ 988               	.LCFI13:
+ 989               		.cfi_def_cfa_offset 16
+ 990               		.cfi_offset 31, -15
+ 991               	/* prologue: Signal */
+ 992               	/* frame size = 0 */
+ 993               	/* stack size = 15 */
+ 994               	.L__stack_usage = 15
+ 315:system/asm.c  ****     PORTE = 0x03;
+ 995               		.loc 1 315 5 view .LVU214
+ 996               		.loc 1 315 11 is_stmt 0 view .LVU215
+ 997 03d8 83E0      		ldi r24,lo8(3)
+ 998 03da 8EB9      		out 0xe,r24
+ 316:system/asm.c  ****     osAsmYieldFromTick();
+ 999               		.loc 1 316 5 is_stmt 1 view .LVU216
+ 1000 03dc 0E94 0000 		call osAsmYieldFromTick
+ 1001               	.LVL63:
+ 317:system/asm.c  ****     asm volatile("reti");
+ 1002               		.loc 1 317 5 view .LVU217
+ 1003               	/* #APP */
+ 1004               	 ;  317 "system/asm.c" 1
+ 1005 03e0 1895      		reti
+ 1006               	 ;  0 "" 2
+ 1007               	/* #NOAPP */
+ 1008               	/* epilogue start */
+ 318:system/asm.c  **** }
+ 1009               		.loc 1 318 1 is_stmt 0 view .LVU218
+ 1010 03e2 FF91      		pop r31
+ 1011 03e4 EF91      		pop r30
+ 1012 03e6 BF91      		pop r27
+ 1013 03e8 AF91      		pop r26
+ 1014 03ea 9F91      		pop r25
+ 1015 03ec 8F91      		pop r24
+ 1016 03ee 7F91      		pop r23
+ 1017 03f0 6F91      		pop r22
+ 1018 03f2 5F91      		pop r21
+ 1019 03f4 4F91      		pop r20
+ 1020 03f6 3F91      		pop r19
+ 1021 03f8 2F91      		pop r18
+ 1022 03fa 0F90      		pop r0
+ 1023 03fc 0FBE      		out __SREG__,r0
+ 1024 03fe 0F90      		pop r0
+ 1025 0400 1F90      		pop r1
+ 1026 0402 1895      		reti
+ 1027               		.cfi_endproc
+ 1028               	.LFE24:
+ 1030               	.Letext0:
+ 1031               		.file 3 "/usr/avr/include/stdint.h"
+ 1032               		.file 4 "/usr/lib/gcc/avr/9.2.0/include/stddef.h"
+ 1033               		.file 5 "/usr/avr/include/stdio.h"
+ 1034               		.file 6 "/usr/avr/include/stdlib.h"
+ 1035               		.file 7 "system/scheduler.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 asm.c
+     /tmp/ccFZll4E.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccFZll4E.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccFZll4E.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccFZll4E.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccFZll4E.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccFZll4E.s:12     .text:0000000000000000 osSetupTimerInterrupt
+     /tmp/ccFZll4E.s:61     .text:000000000000002c osTAS
+     /tmp/ccFZll4E.s:133    .text:0000000000000040 osCAS
+     /tmp/ccFZll4E.s:203    .text:0000000000000052 osInitializeStack
+     /tmp/ccFZll4E.s:504    .text:0000000000000136 osNonSavableYield
+     /tmp/ccFZll4E.s:574    .text:0000000000000194 osResumableYield
+     /tmp/ccFZll4E.s:692    .text:000000000000024a osNonResumableYield
+     /tmp/ccFZll4E.s:810    .text:0000000000000300 osAsmYieldFromTick
+     /tmp/ccFZll4E.s:928    .text:00000000000003b6 __vector_11
+
+UNDEFINED SYMBOLS
+osTaskExit
+osContextSwitch
+osCurrentTask

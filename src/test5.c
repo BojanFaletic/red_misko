@@ -1,16 +1,13 @@
-#include "lib/delay.h"
-#include "lib/gpio.h"
-#include "lib/pirc_lcd/XPT2046.h"
-#include "lib/uart.h"
-#include "system/system.h"
+#include "delay.h"
+#include "gpio.h"
+#include "pirc_lcd/LCD_Ili9341.h"
+#include "pirc_lcd/XPT2046.h"
+#include "system.h"
+#include "uart.h"
 #include <avr/io.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-
-
-
-#include "lib/pirc_lcd/LCD_Ili9341.h"
 void window_1_callback(UG_MESSAGE *msg) { printf("Callback function\n"); }
 #define MAX_OBJECTS 10
 
@@ -77,7 +74,6 @@ int main() {
   draw_home_scren();
 
   uint8_t update = 0;
-
   uint16_t x, y, x_prev, y_prev;
   while (1) {
     if (XPT2046_isTouching()) {
@@ -85,7 +81,7 @@ int main() {
       XPT2046_getPosition(&x, &y, MODE_DFR, 32);
       printf("Tuching, X = %d, Y = %d\n", x, y);
       UG_TouchUpdate(x, y, TOUCH_STATE_PRESSED);
-      
+
       x_prev = x;
       y_prev = y;
       update = 1;
@@ -94,12 +90,10 @@ int main() {
       update = 1;
     }
 
-    if (update == 1)
-    {
-        UG_Update();
-        update = 0;
+    if (update == 1) {
+      UG_Update();
+      update = 0;
     }
     // printf("Done!\n");
-    
   }
 }

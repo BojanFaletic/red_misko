@@ -1,0 +1,120 @@
+   1               		.file	"system.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	osInit
+  12               	osInit:
+  13               	.LFB16:
+  14               		.file 1 "system/system.c"
+   1:system/system.c **** /*
+   2:system/system.c ****  * Operating system for Atmel AVR microcontrollers
+   3:system/system.c ****  * Copyright (c) 2015 Konrad Kusnierz <iryont@gmail.com>
+   4:system/system.c ****  *
+   5:system/system.c ****  * Permission is hereby granted, free of charge, to any person obtaining a copy
+   6:system/system.c ****  * of this software and associated documentation files (the "Software"), to deal
+   7:system/system.c ****  * in the Software without restriction, including without limitation the rights
+   8:system/system.c ****  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   9:system/system.c ****  * copies of the Software, and to permit persons to whom the Software is
+  10:system/system.c ****  * furnished to do so, subject to the following conditions:
+  11:system/system.c ****  *
+  12:system/system.c ****  * The above copyright notice and this permission notice shall be included in
+  13:system/system.c ****  * all copies or substantial portions of the Software.
+  14:system/system.c ****  *
+  15:system/system.c ****  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  16:system/system.c ****  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  17:system/system.c ****  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  18:system/system.c ****  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  19:system/system.c ****  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  20:system/system.c ****  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  21:system/system.c ****  * THE SOFTWARE.
+  22:system/system.c ****  */
+  23:system/system.c **** 
+  24:system/system.c **** #include "system.h"
+  25:system/system.c **** 
+  26:system/system.c **** void osInit()
+  27:system/system.c **** {
+  15               		.loc 1 27 1 view -0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  28:system/system.c ****     osTasksQueueInit();
+  21               		.loc 1 28 5 view .LVU1
+  22 0000 0E94 0000 		call osTasksQueueInit
+  23               	.LVL0:
+  29:system/system.c ****     osSchedulerInit();
+  24               		.loc 1 29 5 view .LVU2
+  25 0004 0E94 0000 		call osSchedulerInit
+  26               	.LVL1:
+  30:system/system.c ****     osSetupTimerInterrupt();
+  27               		.loc 1 30 5 view .LVU3
+  28 0008 0C94 0000 		jmp osSetupTimerInterrupt
+  29               	.LVL2:
+  30               		.cfi_endproc
+  31               	.LFE16:
+  33               	.global	osRun
+  35               	osRun:
+  36               	.LFB17:
+  31:system/system.c **** }
+  32:system/system.c **** 
+  33:system/system.c **** void osRun()
+  34:system/system.c **** {
+  37               		.loc 1 34 1 view -0
+  38               		.cfi_startproc
+  39               	/* prologue: function */
+  40               	/* frame size = 0 */
+  41               	/* stack size = 0 */
+  42               	.L__stack_usage = 0
+  35:system/system.c ****     // enable interrupts
+  36:system/system.c ****     ENABLE_INTERRUPTS
+  43               		.loc 1 36 5 view .LVU5
+  44               	/* #APP */
+  45               	 ;  36 "system/system.c" 1
+  46 000c 7894      		sei
+  47               	 ;  0 "" 2
+  37:system/system.c **** 
+  38:system/system.c ****     // yield without saving the context
+  39:system/system.c ****     osNonSavableYield();
+  48               		.loc 1 39 5 view .LVU6
+  49               	/* #NOAPP */
+  50 000e 0E94 0000 		call osNonSavableYield
+  51               	.LVL3:
+  40:system/system.c **** 
+  41:system/system.c ****     // should never get here
+  42:system/system.c ****     return;
+  52               		.loc 1 42 5 view .LVU7
+  53               	/* epilogue start */
+  43:system/system.c **** }
+  54               		.loc 1 43 1 is_stmt 0 view .LVU8
+  55 0012 0895      		ret
+  56               		.cfi_endproc
+  57               	.LFE17:
+  59               	.Letext0:
+  60               		.file 2 "/usr/avr/include/stdint.h"
+  61               		.file 3 "/usr/lib/gcc/avr/9.2.0/include/stddef.h"
+  62               		.file 4 "/usr/avr/include/stdio.h"
+  63               		.file 5 "/usr/avr/include/stdlib.h"
+  64               		.file 6 "system/asm.h"
+  65               		.file 7 "system/tasks.h"
+  66               		.file 8 "system/scheduler.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 system.c
+     /tmp/cclAkcVc.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cclAkcVc.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cclAkcVc.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cclAkcVc.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cclAkcVc.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cclAkcVc.s:12     .text:0000000000000000 osInit
+     /tmp/cclAkcVc.s:35     .text:000000000000000c osRun
+
+UNDEFINED SYMBOLS
+osTasksQueueInit
+osSchedulerInit
+osSetupTimerInterrupt
+osNonSavableYield

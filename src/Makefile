@@ -1,57 +1,16 @@
-# ----------------------------------------------------------------------------
-# Makefile based on WinAVR Makefile Template written by Eric B. Weddington, 
-# J�rg Wunsch, et al.
-#
-# Adjust F_CPU below to the clock frequency in Mhz of your AVR target
-#
-# Adjust the size of the uart receive and transmit ringbuffer in bytes using 
-# defines -DUART_RX_BUFFER_SIZE=128 and -DUART_TX_BUFFER_SIZE=128 in the 
-# CDEF section below
-# 
-#----------------------------------------------------------------------------
-# On command line:
-#
-# make all = Make software.
-#
-# make clean = Clean out built project files.
-#
-# make coff = Convert ELF to AVR COFF.
-#
-# make extcoff = Convert ELF to AVR Extended COFF.
-#
-# make program = Download the hex file to the device, using avrdude.
-#                Please customize the avrdude settings below first!
-#
-# make debug = Start either simulavr or avarice as specified for debugging, 
-#              with avr-gdb or avr-insight as the front end for debugging.
-#
-# make filename.s = Just compile filename.c into the assembler code only.
-#
-# make filename.i = Create a preprocessed source file for use in submitting
-#                   bug reports to the GCC project.
-#
-# To rebuild project do "make clean" then "make all".
-#----------------------------------------------------------------------------
-
-
-# MCU name
-MCU = atmega328pb
-
-# Processor frequency.
-#     This will define a symbol, F_CPU, in all source code files equal to the 
-#     processor frequency. You can then use this symbol in your source code to 
-#     calculate timings. Do NOT tack on a 'UL' at the end, this will be done
-#     automatically to create a 32-bit value in your source code.
-F_CPU = 16000000
-
-# Output format. (can be srec, ihex, binary)
-FORMAT = ihex
-
 # Target file name (without extension).
 TARGET = test5
 
+# MCU name
+MCU = atmega328pb
+F_CPU = 16000000
+
+FORMAT = ihex
+
+
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c lib/uart.c system/asm.c system/mutex.c system/queue.c system/scheduler.c system/system.c system/tasks.c lib/gpio.c lib/delay.c lib/io_interrupt.c lib/spi.c lib/ili9341/lcd.c lib/pirc_lcd/ugui.c lib/pirc_lcd/LCD_Ili9341.c lib/pirc_lcd/XPT2046.c 
+SRC =  $(wildcard *.c) $(wildcard ../lib/*.c) $(wildcard ../lib/pirc_lcd/*.c)
+#lib/uart.c system/asm.c system/mutex.c system/queue.c system/scheduler.c system/system.c system/tasks.c lib/gpio.c lib/delay.c lib/io_interrupt.c lib/spi.c lib/ili9341/lcd.c lib/pirc_lcd/ugui.c lib/pirc_lcd/LCD_Ili9341.c lib/pirc_lcd/XPT2046.c 
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -60,19 +19,14 @@ SRC = $(TARGET).c lib/uart.c system/asm.c system/mutex.c system/queue.c system/s
 #     Even though the DOS/Win* filesystem matches both .s and .S the same,
 #     it will preserve the spelling of the filenames, and gcc itself does
 #     care about how the name is spelled on its command-line.
-ASRC = 
+ASRC =
 
 
-# Optimization level, can be [0, 1, 2, 3, s]. 
-#     0 = turn off optimization. s = optimize for size.
-#     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
+# Optimization level, can be 
 OPT = -Os -s
 
 
 # Debugging format.
-#     Native formats for AVR-GCC's -g are dwarf-2 [default] or stabs.
-#     AVR Studio 4.10 requires dwarf-2.
-#     AVR [Extended] COFF format requires stabs, plus an avr-objcopy run.
 DEBUG = dwarf-2
 
 
@@ -84,10 +38,6 @@ EXTRAINCDIRS =
 
 
 # Compiler flag to set the C Standard level.
-#     c89   = "ANSI" C
-#     gnu89 = c89 plus GCC extensions
-#     c99   = ISO C99 standard (not yet fully implemented)
-#     gnu99 = c99 plus GCC extensions
 CSTANDARD = -std=gnu99
 
 
@@ -100,17 +50,13 @@ CDEFS = -DF_CPU=$(F_CPU)UL
 
 
 # Place -I options here
-CINCS = -I./lib/,./system/
+CINCS = -I../lib/
+CINCS += -I../system/
+CINCS += -I../lib/pirc_lcd/
 
 
 
 #---------------- Compiler Options ----------------
-#  -g*:          generate debugging information
-#  -O*:          optimization level
-#  -f...:        tuning, see GCC manual and avr-libc documentation
-#  -Wall...:     warning level
-#  -Wa,...:      tell GCC to pass this to the assembler.
-#    -adhlns...: create assembler listing
 CFLAGS = -g$(DEBUG)
 CFLAGS += $(CDEFS) $(CINCS)
 CFLAGS += $(OPT)
@@ -122,12 +68,6 @@ CFLAGS += $(CSTANDARD)
 
 
 #---------------- Assembler Options ----------------
-#  -Wa,...:   tell GCC to pass this to the assembler.
-#  -ahlms:    create listing
-#  -gstabs:   have the assembler create line number information; note that
-#             for use in COFF files, additional information about filenames
-#             and function names needs to be present in the assembler source
-#             files -- see avr-libc docs [FIXME: not yet described there]
 ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
 
 
@@ -161,23 +101,11 @@ MATH_LIB = -lm
 
 
 #---------------- External Memory Options ----------------
-
-# 64 KB of external RAM, starting after internal RAM (ATmega128!),
-# used for variables (.data/.bss) and heap (malloc()).
-#EXTMEMOPTS = -Wl,-Tdata=0x801100,--defsym=__heap_end=0x80ffff
-
-# 64 KB of external RAM, starting after internal RAM (ATmega128!),
-# only used for heap (malloc()).
-#EXTMEMOPTS = -Wl,--defsym=__heap_start=0x801100,--defsym=__heap_end=0x80ffff
-
 EXTMEMOPTS =
 
 
 
 #---------------- Linker Options ----------------
-#  -Wl,...:     tell GCC to pass this to linker.
-#    -Map:      create map file
-#    --cref:    add cross reference to  map file
 LDFLAGS = -Wl,-gc-sections -mrelax -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS += $(EXTMEMOPTS)
 LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
@@ -185,35 +113,15 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 
 
 #---------------- Programming Options (avrdude) ----------------
-
-# Programming hardware: alf avr910 avrisp bascom bsd 
-# dt006 pavr picoweb pony-stk200 sp12 stk200 stk500
-#
-# Type: avrdude -c ?
-# to get a full listing.
-#
 AVRDUDE_PROGRAMMER = atmelice_isp
 
-# com1 = serial port. Use lpt1 to connect to parallel port.
-# AVRDUDE_PORT = /dev/tty.usb*    # programmer connected to serial device
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
+
+# Program EEPROM
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
 
-# Uncomment the following if you want avrdude's erase cycle counter.
-# Note that this counter needs to be initialized first using -Yn,
-# see avrdude manual.
-#AVRDUDE_ERASE_COUNTER = -y
-
-# Uncomment the following if you do /not/ wish a verification to be
-# performed after programming the device.
-#AVRDUDE_NO_VERIFY = -V
-
-# Increase verbosity level.  Please use this when submitting bug
-# reports about avrdude. See <http://savannah.nongnu.org/projects/avrdude> 
-# to submit bug reports.
-#AVRDUDE_VERBOSE = -v -v
 
 AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -C avrdude.conf
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY) -B 3
@@ -304,10 +212,6 @@ GENDEPFLAGS = -MD -MP -MF .dep/$(@F).d
 ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS) $(GENDEPFLAGS)
 ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
-
-
-
-
 # Default target.
 all: begin gccversion sizebefore build sizeafter end
 
@@ -320,10 +224,7 @@ lss: $(TARGET).lss
 sym: $(TARGET).sym
 
 
-
 # Eye candy.
-# AVR Studio 3.x does not check make's exit code but relies on
-# the following magic strings to be generated by the compile job.
 begin:
 	@echo
 	@echo $(MSG_BEGIN)
@@ -360,8 +261,6 @@ program: $(TARGET).hex $(TARGET).eep
 
 
 # Generate avr-gdb config/init file which does the following:
-#     define the reset signal, load the target file, connect to target, and set 
-#     a breakpoint at main().
 gdb-config: 
 	@$(REMOVE) $(GDBINIT_FILE)
 	@echo define reset >> $(GDBINIT_FILE)
@@ -387,9 +286,6 @@ else
 endif
 	@$(WINSHELL) /c start avr-$(DEBUG_UI) --command=$(GDBINIT_FILE)
 	
-
-
-# no debug TODO
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) \
 --change-section-address .data-0x800000 \

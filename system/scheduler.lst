@@ -1,0 +1,782 @@
+   1               		.file	"scheduler.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	osIdleTask
+  12               	osIdleTask:
+  13               	.LFB16:
+  14               		.file 1 "system/scheduler.c"
+   1:system/scheduler.c **** /*
+   2:system/scheduler.c ****  * Operating system for Atmel AVR microcontrollers
+   3:system/scheduler.c ****  * Copyright (c) 2015 Konrad Kusnierz <iryont@gmail.com>
+   4:system/scheduler.c ****  *
+   5:system/scheduler.c ****  * Permission is hereby granted, free of charge, to any person obtaining a copy
+   6:system/scheduler.c ****  * of this software and associated documentation files (the "Software"), to deal
+   7:system/scheduler.c ****  * in the Software without restriction, including without limitation the rights
+   8:system/scheduler.c ****  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   9:system/scheduler.c ****  * copies of the Software, and to permit persons to whom the Software is
+  10:system/scheduler.c ****  * furnished to do so, subject to the following conditions:
+  11:system/scheduler.c ****  *
+  12:system/scheduler.c ****  * The above copyright notice and this permission notice shall be included in
+  13:system/scheduler.c ****  * all copies or substantial portions of the Software.
+  14:system/scheduler.c ****  *
+  15:system/scheduler.c ****  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  16:system/scheduler.c ****  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  17:system/scheduler.c ****  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  18:system/scheduler.c ****  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  19:system/scheduler.c ****  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  20:system/scheduler.c ****  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  21:system/scheduler.c ****  * THE SOFTWARE.
+  22:system/scheduler.c ****  */
+  23:system/scheduler.c **** 
+  24:system/scheduler.c **** #include <stdlib.h>
+  25:system/scheduler.c **** #include "scheduler.h"
+  26:system/scheduler.c **** #include "asm.h"
+  27:system/scheduler.c **** 
+  28:system/scheduler.c **** // current task control block
+  29:system/scheduler.c **** TaskControlBlock* volatile osCurrentTask = NULL;
+  30:system/scheduler.c **** 
+  31:system/scheduler.c **** void osIdleTask(void *parameters)
+  32:system/scheduler.c **** {
+  15               		.loc 1 32 1 view -0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  21               	.LVL0:
+  22               	.L2:
+  33:system/scheduler.c ****     while(1);
+  23               		.loc 1 33 5 discriminator 1 view .LVU1
+  24               		.loc 1 33 13 discriminator 1 view .LVU2
+  25               		.loc 1 33 10 discriminator 1 view .LVU3
+  26 0000 00C0      		rjmp .L2
+  27               		.cfi_endproc
+  28               	.LFE16:
+  30               	.global	osWait
+  32               	osWait:
+  33               	.LVL1:
+  34               	.LFB18:
+  34:system/scheduler.c **** }
+  35:system/scheduler.c **** 
+  36:system/scheduler.c **** void osSchedulerInit()
+  37:system/scheduler.c **** {
+  38:system/scheduler.c ****     osCurrentTask = osCreateTask(osIdleTask, NULL, 64, 0);
+  39:system/scheduler.c **** }
+  40:system/scheduler.c **** 
+  41:system/scheduler.c **** void osWait(uint16_t wait)
+  42:system/scheduler.c **** {
+  35               		.loc 1 42 1 view -0
+  36               		.cfi_startproc
+  37               	/* prologue: function */
+  38               	/* frame size = 0 */
+  39               	/* stack size = 0 */
+  40               	.L__stack_usage = 0
+  43:system/scheduler.c ****     DISABLE_INTERRUPTS
+  41               		.loc 1 43 5 view .LVU5
+  42               	/* #APP */
+  43               	 ;  43 "system/scheduler.c" 1
+  44 0002 F894      		cli
+  45               	 ;  0 "" 2
+  44:system/scheduler.c ****     osCurrentTask->wait = wait;
+  46               		.loc 1 44 5 view .LVU6
+  47               		.loc 1 44 18 is_stmt 0 view .LVU7
+  48               	/* #NOAPP */
+  49 0004 E091 0000 		lds r30,osCurrentTask
+  50 0008 F091 0000 		lds r31,osCurrentTask+1
+  51               		.loc 1 44 25 view .LVU8
+  52 000c 8583      		std Z+5,r24
+  53 000e 9683      		std Z+6,r25
+  45:system/scheduler.c ****     ENABLE_INTERRUPTS
+  54               		.loc 1 45 5 is_stmt 1 view .LVU9
+  55               	/* #APP */
+  56               	 ;  45 "system/scheduler.c" 1
+  57 0010 7894      		sei
+  58               	 ;  0 "" 2
+  46:system/scheduler.c **** 
+  47:system/scheduler.c ****     // yield and switch to another process
+  48:system/scheduler.c ****     osNonResumableYield();
+  59               		.loc 1 48 5 view .LVU10
+  60               	/* #NOAPP */
+  61 0012 0E94 0000 		call osNonResumableYield
+  62               	.LVL2:
+  63               	/* epilogue start */
+  49:system/scheduler.c **** }
+  64               		.loc 1 49 1 is_stmt 0 view .LVU11
+  65 0016 0895      		ret
+  66               		.cfi_endproc
+  67               	.LFE18:
+  69               	.global	osContextSwitch
+  71               	osContextSwitch:
+  72               	.LVL3:
+  73               	.LFB20:
+  50:system/scheduler.c **** 
+  51:system/scheduler.c **** void osTaskExit()
+  52:system/scheduler.c **** {
+  53:system/scheduler.c ****     DISABLE_INTERRUPTS
+  54:system/scheduler.c **** 
+  55:system/scheduler.c ****     // remove this task from the list
+  56:system/scheduler.c ****     osTasksQueueRemove(osCurrentTask);
+  57:system/scheduler.c **** 
+  58:system/scheduler.c ****     // free the memory used by this task
+  59:system/scheduler.c ****     osTaskDestroy(osCurrentTask);
+  60:system/scheduler.c **** 
+  61:system/scheduler.c ****     // no current task
+  62:system/scheduler.c ****     osCurrentTask = NULL;
+  63:system/scheduler.c **** 
+  64:system/scheduler.c ****     // yield without saving the context
+  65:system/scheduler.c ****     // any context switch will set SREG register
+  66:system/scheduler.c ****     // all interrupts will be re-enabled
+  67:system/scheduler.c ****     osNonSavableYield();
+  68:system/scheduler.c **** }
+  69:system/scheduler.c **** 
+  70:system/scheduler.c **** void osContextSwitch(int8_t resumable, int8_t incremental)
+  71:system/scheduler.c **** {
+  74               		.loc 1 71 1 is_stmt 1 view -0
+  75               		.cfi_startproc
+  76               		.loc 1 71 1 is_stmt 0 view .LVU13
+  77 0018 EF92      		push r14
+  78               	.LCFI0:
+  79               		.cfi_def_cfa_offset 3
+  80               		.cfi_offset 14, -2
+  81 001a FF92      		push r15
+  82               	.LCFI1:
+  83               		.cfi_def_cfa_offset 4
+  84               		.cfi_offset 15, -3
+  85 001c 0F93      		push r16
+  86               	.LCFI2:
+  87               		.cfi_def_cfa_offset 5
+  88               		.cfi_offset 16, -4
+  89 001e 1F93      		push r17
+  90               	.LCFI3:
+  91               		.cfi_def_cfa_offset 6
+  92               		.cfi_offset 17, -5
+  93 0020 CF93      		push r28
+  94               	.LCFI4:
+  95               		.cfi_def_cfa_offset 7
+  96               		.cfi_offset 28, -6
+  97 0022 DF93      		push r29
+  98               	.LCFI5:
+  99               		.cfi_def_cfa_offset 8
+ 100               		.cfi_offset 29, -7
+ 101               	/* prologue: function */
+ 102               	/* frame size = 0 */
+ 103               	/* stack size = 6 */
+ 104               	.L__stack_usage = 6
+ 105 0024 F82E      		mov r15,r24
+ 106 0026 E62E      		mov r14,r22
+  72:system/scheduler.c ****     uint8_t queueSize = osTasksQueueSize();
+ 107               		.loc 1 72 5 is_stmt 1 view .LVU14
+ 108               		.loc 1 72 25 is_stmt 0 view .LVU15
+ 109 0028 0E94 0000 		call osTasksQueueSize
+ 110               	.LVL4:
+ 111               		.loc 1 72 25 view .LVU16
+ 112 002c 182F      		mov r17,r24
+ 113               	.LVL5:
+  73:system/scheduler.c **** 
+  74:system/scheduler.c ****     TaskControlBlock *target = NULL;
+ 114               		.loc 1 74 5 is_stmt 1 view .LVU17
+  75:system/scheduler.c ****     for(uint8_t i = 0; i < queueSize; i++) {
+ 115               		.loc 1 75 5 view .LVU18
+ 116               	.LBB2:
+ 117               		.loc 1 75 9 view .LVU19
+ 118               		.loc 1 75 17 is_stmt 0 view .LVU20
+ 119 002e 00E0      		ldi r16,0
+ 120               	.LBE2:
+  74:system/scheduler.c ****     for(uint8_t i = 0; i < queueSize; i++) {
+ 121               		.loc 1 74 23 view .LVU21
+ 122 0030 D0E0      		ldi r29,0
+ 123 0032 C0E0      		ldi r28,0
+ 124               	.LVL6:
+ 125               	.L5:
+ 126               	.LBB5:
+ 127               		.loc 1 75 24 is_stmt 1 discriminator 1 view .LVU22
+ 128               		.loc 1 75 5 is_stmt 0 discriminator 1 view .LVU23
+ 129 0034 0113      		cpse r16,r17
+ 130 0036 00C0      		rjmp .L13
+ 131               	.LBE5:
+  76:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+  77:system/scheduler.c **** 
+  78:system/scheduler.c ****         // task requested to wait for a while
+  79:system/scheduler.c ****         if(incremental) {
+  80:system/scheduler.c ****             if(task != osCurrentTask)
+  81:system/scheduler.c ****                 task->age++;
+  82:system/scheduler.c **** 
+  83:system/scheduler.c ****             if(task->wait > 0)
+  84:system/scheduler.c ****                 task->wait--;
+  85:system/scheduler.c ****         }
+  86:system/scheduler.c **** 
+  87:system/scheduler.c ****         if(task->wait > 0)
+  88:system/scheduler.c ****             continue;
+  89:system/scheduler.c **** 
+  90:system/scheduler.c ****         // no task yet, so choose this one
+  91:system/scheduler.c ****         if(!target) {
+  92:system/scheduler.c ****             target = task;
+  93:system/scheduler.c ****             continue;
+  94:system/scheduler.c ****         }
+  95:system/scheduler.c **** 
+  96:system/scheduler.c ****         // apparently task doesn't want to be resumed right away
+  97:system/scheduler.c ****         // but if it's the only task then it has no choice
+  98:system/scheduler.c ****         if(!resumable && task == osCurrentTask && queueSize != 1)
+  99:system/scheduler.c ****             continue;
+ 100:system/scheduler.c **** 
+ 101:system/scheduler.c ****         if(task->priority * queueSize + task->age > target->priority * queueSize + target->age)
+ 102:system/scheduler.c ****             target = task;
+ 103:system/scheduler.c ****     }
+ 104:system/scheduler.c **** 
+ 105:system/scheduler.c ****     osCurrentTask = target;
+ 132               		.loc 1 105 5 is_stmt 1 view .LVU24
+ 133               		.loc 1 105 19 is_stmt 0 view .LVU25
+ 134 0038 D093 0000 		sts osCurrentTask+1,r29
+ 135 003c C093 0000 		sts osCurrentTask,r28
+ 106:system/scheduler.c ****     osCurrentTask->age = 0;
+ 136               		.loc 1 106 5 is_stmt 1 view .LVU26
+ 137               		.loc 1 106 18 is_stmt 0 view .LVU27
+ 138 0040 E091 0000 		lds r30,osCurrentTask
+ 139 0044 F091 0000 		lds r31,osCurrentTask+1
+ 140               		.loc 1 106 24 view .LVU28
+ 141 0048 1782      		std Z+7,__zero_reg__
+ 142               	/* epilogue start */
+ 107:system/scheduler.c **** }
+ 143               		.loc 1 107 1 view .LVU29
+ 144 004a DF91      		pop r29
+ 145 004c CF91      		pop r28
+ 146               	.LVL7:
+ 147               		.loc 1 107 1 view .LVU30
+ 148 004e 1F91      		pop r17
+ 149               	.LVL8:
+ 150               		.loc 1 107 1 view .LVU31
+ 151 0050 0F91      		pop r16
+ 152               	.LVL9:
+ 153               		.loc 1 107 1 view .LVU32
+ 154 0052 FF90      		pop r15
+ 155               	.LVL10:
+ 156               		.loc 1 107 1 view .LVU33
+ 157 0054 EF90      		pop r14
+ 158               	.LVL11:
+ 159               		.loc 1 107 1 view .LVU34
+ 160 0056 0895      		ret
+ 161               	.LVL12:
+ 162               	.L13:
+ 163               	.LBB6:
+ 164               	.LBB3:
+  76:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+ 165               		.loc 1 76 9 is_stmt 1 view .LVU35
+  76:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+ 166               		.loc 1 76 34 is_stmt 0 view .LVU36
+ 167 0058 802F      		mov r24,r16
+ 168 005a 0E94 0000 		call osTasksQueueAt
+ 169               	.LVL13:
+ 170 005e FC01      		movw r30,r24
+ 171               	.LVL14:
+  79:system/scheduler.c ****             if(task != osCurrentTask)
+ 172               		.loc 1 79 9 is_stmt 1 view .LVU37
+  79:system/scheduler.c ****             if(task != osCurrentTask)
+ 173               		.loc 1 79 11 is_stmt 0 view .LVU38
+ 174 0060 EE20      		tst r14
+ 175 0062 01F0      		breq .L6
+  80:system/scheduler.c ****                 task->age++;
+ 176               		.loc 1 80 13 is_stmt 1 view .LVU39
+  80:system/scheduler.c ****                 task->age++;
+ 177               		.loc 1 80 21 is_stmt 0 view .LVU40
+ 178 0064 8091 0000 		lds r24,osCurrentTask
+ 179 0068 9091 0000 		lds r25,osCurrentTask+1
+ 180               	.LVL15:
+  80:system/scheduler.c ****                 task->age++;
+ 181               		.loc 1 80 15 view .LVU41
+ 182 006c 8E17      		cp r24,r30
+ 183 006e 9F07      		cpc r25,r31
+ 184 0070 01F0      		breq .L7
+  81:system/scheduler.c **** 
+ 185               		.loc 1 81 17 is_stmt 1 view .LVU42
+  81:system/scheduler.c **** 
+ 186               		.loc 1 81 26 is_stmt 0 view .LVU43
+ 187 0072 8781      		ldd r24,Z+7
+ 188 0074 8F5F      		subi r24,lo8(-(1))
+ 189 0076 8783      		std Z+7,r24
+ 190               	.L7:
+  83:system/scheduler.c ****                 task->wait--;
+ 191               		.loc 1 83 13 is_stmt 1 view .LVU44
+  83:system/scheduler.c ****                 task->wait--;
+ 192               		.loc 1 83 20 is_stmt 0 view .LVU45
+ 193 0078 8581      		ldd r24,Z+5
+ 194 007a 9681      		ldd r25,Z+6
+  83:system/scheduler.c ****                 task->wait--;
+ 195               		.loc 1 83 15 view .LVU46
+ 196 007c 0097      		sbiw r24,0
+ 197 007e 01F4      		brne .L8
+ 198               	.L11:
+  91:system/scheduler.c ****             target = task;
+ 199               		.loc 1 91 9 is_stmt 1 view .LVU47
+  91:system/scheduler.c ****             target = task;
+ 200               		.loc 1 91 11 is_stmt 0 view .LVU48
+ 201 0080 2097      		sbiw r28,0
+ 202 0082 01F4      		brne .L18
+ 203               	.L14:
+  76:system/scheduler.c **** 
+ 204               		.loc 1 76 34 view .LVU49
+ 205 0084 EF01      		movw r28,r30
+ 206               	.LVL16:
+  76:system/scheduler.c **** 
+ 207               		.loc 1 76 34 view .LVU50
+ 208 0086 00C0      		rjmp .L9
+ 209               	.LVL17:
+ 210               	.L8:
+  84:system/scheduler.c ****         }
+ 211               		.loc 1 84 17 is_stmt 1 view .LVU51
+  84:system/scheduler.c ****         }
+ 212               		.loc 1 84 27 is_stmt 0 view .LVU52
+ 213 0088 0197      		sbiw r24,1
+ 214 008a 9683      		std Z+6,r25
+ 215 008c 8583      		std Z+5,r24
+ 216               	.L6:
+  87:system/scheduler.c ****             continue;
+ 217               		.loc 1 87 9 is_stmt 1 view .LVU53
+  87:system/scheduler.c ****             continue;
+ 218               		.loc 1 87 11 is_stmt 0 view .LVU54
+ 219 008e 8581      		ldd r24,Z+5
+ 220 0090 9681      		ldd r25,Z+6
+ 221 0092 892B      		or r24,r25
+ 222 0094 01F0      		breq .L11
+ 223               	.LVL18:
+ 224               	.L9:
+  87:system/scheduler.c ****             continue;
+ 225               		.loc 1 87 11 view .LVU55
+ 226               	.LBE3:
+  75:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+ 227               		.loc 1 75 39 is_stmt 1 discriminator 2 view .LVU56
+  75:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+ 228               		.loc 1 75 40 is_stmt 0 discriminator 2 view .LVU57
+ 229 0096 0F5F      		subi r16,lo8(-(1))
+ 230               	.LVL19:
+  75:system/scheduler.c ****         TaskControlBlock *task = osTasksQueueAt(i);
+ 231               		.loc 1 75 40 discriminator 2 view .LVU58
+ 232 0098 00C0      		rjmp .L5
+ 233               	.L18:
+ 234               	.LBB4:
+  98:system/scheduler.c ****             continue;
+ 235               		.loc 1 98 9 is_stmt 1 view .LVU59
+  98:system/scheduler.c ****             continue;
+ 236               		.loc 1 98 11 is_stmt 0 view .LVU60
+ 237 009a F110      		cpse r15,__zero_reg__
+ 238 009c 00C0      		rjmp .L12
+  98:system/scheduler.c ****             continue;
+ 239               		.loc 1 98 31 discriminator 1 view .LVU61
+ 240 009e 8091 0000 		lds r24,osCurrentTask
+ 241 00a2 9091 0000 		lds r25,osCurrentTask+1
+  98:system/scheduler.c ****             continue;
+ 242               		.loc 1 98 23 discriminator 1 view .LVU62
+ 243 00a6 8E17      		cp r24,r30
+ 244 00a8 9F07      		cpc r25,r31
+ 245 00aa 01F4      		brne .L12
+  98:system/scheduler.c ****             continue;
+ 246               		.loc 1 98 48 discriminator 2 view .LVU63
+ 247 00ac 1130      		cpi r17,lo8(1)
+ 248 00ae 01F4      		brne .L9
+ 249               	.L12:
+ 101:system/scheduler.c ****             target = task;
+ 250               		.loc 1 101 9 is_stmt 1 view .LVU64
+ 101:system/scheduler.c ****             target = task;
+ 251               		.loc 1 101 27 is_stmt 0 view .LVU65
+ 252 00b0 8481      		ldd r24,Z+4
+ 101:system/scheduler.c ****             target = task;
+ 253               		.loc 1 101 45 view .LVU66
+ 254 00b2 4781      		ldd r20,Z+7
+ 255 00b4 50E0      		ldi r21,0
+ 101:system/scheduler.c ****             target = task;
+ 256               		.loc 1 101 39 view .LVU67
+ 257 00b6 189F      		mul r17,r24
+ 258 00b8 400D      		add r20,r0
+ 259 00ba 511D      		adc r21,r1
+ 260 00bc 1124      		clr __zero_reg__
+ 101:system/scheduler.c ****             target = task;
+ 261               		.loc 1 101 70 view .LVU68
+ 262 00be 8C81      		ldd r24,Y+4
+ 101:system/scheduler.c ****             target = task;
+ 263               		.loc 1 101 90 view .LVU69
+ 264 00c0 2F81      		ldd r18,Y+7
+ 265 00c2 30E0      		ldi r19,0
+ 101:system/scheduler.c ****             target = task;
+ 266               		.loc 1 101 82 view .LVU70
+ 267 00c4 189F      		mul r17,r24
+ 268 00c6 200D      		add r18,r0
+ 269 00c8 311D      		adc r19,r1
+ 270 00ca 1124      		clr __zero_reg__
+ 101:system/scheduler.c ****             target = task;
+ 271               		.loc 1 101 11 view .LVU71
+ 272 00cc 2417      		cp r18,r20
+ 273 00ce 3507      		cpc r19,r21
+ 274 00d0 04F4      		brge .L9
+ 275 00d2 00C0      		rjmp .L14
+ 276               	.LBE4:
+ 277               	.LBE6:
+ 278               		.cfi_endproc
+ 279               	.LFE20:
+ 281               	.global	osCreateTask
+ 283               	osCreateTask:
+ 284               	.LVL20:
+ 285               	.LFB21:
+ 108:system/scheduler.c **** 
+ 109:system/scheduler.c **** TaskControlBlock* osCreateTask(void (*function)(void*), void *param, uint8_t stackSize, uint8_t pri
+ 110:system/scheduler.c **** {
+ 286               		.loc 1 110 1 is_stmt 1 view -0
+ 287               		.cfi_startproc
+ 288               		.loc 1 110 1 is_stmt 0 view .LVU73
+ 289 00d4 9F92      		push r9
+ 290               	.LCFI6:
+ 291               		.cfi_def_cfa_offset 3
+ 292               		.cfi_offset 9, -2
+ 293 00d6 AF92      		push r10
+ 294               	.LCFI7:
+ 295               		.cfi_def_cfa_offset 4
+ 296               		.cfi_offset 10, -3
+ 297 00d8 BF92      		push r11
+ 298               	.LCFI8:
+ 299               		.cfi_def_cfa_offset 5
+ 300               		.cfi_offset 11, -4
+ 301 00da CF92      		push r12
+ 302               	.LCFI9:
+ 303               		.cfi_def_cfa_offset 6
+ 304               		.cfi_offset 12, -5
+ 305 00dc DF92      		push r13
+ 306               	.LCFI10:
+ 307               		.cfi_def_cfa_offset 7
+ 308               		.cfi_offset 13, -6
+ 309 00de EF92      		push r14
+ 310               	.LCFI11:
+ 311               		.cfi_def_cfa_offset 8
+ 312               		.cfi_offset 14, -7
+ 313 00e0 FF92      		push r15
+ 314               	.LCFI12:
+ 315               		.cfi_def_cfa_offset 9
+ 316               		.cfi_offset 15, -8
+ 317 00e2 0F93      		push r16
+ 318               	.LCFI13:
+ 319               		.cfi_def_cfa_offset 10
+ 320               		.cfi_offset 16, -9
+ 321 00e4 1F93      		push r17
+ 322               	.LCFI14:
+ 323               		.cfi_def_cfa_offset 11
+ 324               		.cfi_offset 17, -10
+ 325 00e6 CF93      		push r28
+ 326               	.LCFI15:
+ 327               		.cfi_def_cfa_offset 12
+ 328               		.cfi_offset 28, -11
+ 329 00e8 DF93      		push r29
+ 330               	.LCFI16:
+ 331               		.cfi_def_cfa_offset 13
+ 332               		.cfi_offset 29, -12
+ 333               	/* prologue: function */
+ 334               	/* frame size = 0 */
+ 335               	/* stack size = 11 */
+ 336               	.L__stack_usage = 11
+ 337 00ea B82E      		mov r11,r24
+ 338 00ec C92E      		mov r12,r25
+ 339 00ee 962E      		mov r9,r22
+ 340 00f0 A72E      		mov r10,r23
+ 341 00f2 042F      		mov r16,r20
+ 342 00f4 D22E      		mov r13,r18
+ 111:system/scheduler.c ****     TaskControlBlock *task = (TaskControlBlock*)malloc(sizeof(TaskControlBlock));
+ 343               		.loc 1 111 5 is_stmt 1 view .LVU74
+ 344               		.loc 1 111 49 is_stmt 0 view .LVU75
+ 345 00f6 88E0      		ldi r24,lo8(8)
+ 346 00f8 90E0      		ldi r25,0
+ 347               	.LVL21:
+ 348               		.loc 1 111 49 view .LVU76
+ 349 00fa 0E94 0000 		call malloc
+ 350               	.LVL22:
+ 351               		.loc 1 111 49 view .LVU77
+ 352 00fe EC01      		movw r28,r24
+ 353               	.LVL23:
+ 112:system/scheduler.c ****     if(!task)
+ 354               		.loc 1 112 5 is_stmt 1 view .LVU78
+ 355               		.loc 1 112 7 is_stmt 0 view .LVU79
+ 356 0100 892B      		or r24,r25
+ 357 0102 01F0      		breq .L19
+ 113:system/scheduler.c ****         return NULL;
+ 114:system/scheduler.c **** 
+ 115:system/scheduler.c ****     uint8_t* stack = malloc(stackSize);
+ 358               		.loc 1 115 5 is_stmt 1 view .LVU80
+ 359               		.loc 1 115 22 is_stmt 0 view .LVU81
+ 360 0104 10E0      		ldi r17,0
+ 361 0106 C801      		movw r24,r16
+ 362               	.LVL24:
+ 363               		.loc 1 115 22 view .LVU82
+ 364 0108 0E94 0000 		call malloc
+ 365               	.LVL25:
+ 366 010c 7C01      		movw r14,r24
+ 367               	.LVL26:
+ 116:system/scheduler.c ****     if(!stack) {
+ 368               		.loc 1 116 5 is_stmt 1 view .LVU83
+ 369               		.loc 1 116 7 is_stmt 0 view .LVU84
+ 370 010e 892B      		or r24,r25
+ 371 0110 01F4      		brne .L21
+ 117:system/scheduler.c ****         free(task);
+ 372               		.loc 1 117 9 is_stmt 1 view .LVU85
+ 373 0112 CE01      		movw r24,r28
+ 374 0114 0E94 0000 		call free
+ 375               	.LVL27:
+ 118:system/scheduler.c ****         return NULL;
+ 376               		.loc 1 118 9 view .LVU86
+ 377               		.loc 1 118 16 is_stmt 0 view .LVU87
+ 378 0118 D0E0      		ldi r29,0
+ 379 011a C0E0      		ldi r28,0
+ 380               	.LVL28:
+ 381               	.L19:
+ 119:system/scheduler.c ****     }
+ 120:system/scheduler.c **** 
+ 121:system/scheduler.c ****     // stack pointer and stack chunk
+ 122:system/scheduler.c ****     task->sp = osInitializeStack(stack + stackSize - 1, function, param);
+ 123:system/scheduler.c ****     task->sc = stack;
+ 124:system/scheduler.c **** 
+ 125:system/scheduler.c ****     task->priority = priority;
+ 126:system/scheduler.c ****     task->wait = 0;
+ 127:system/scheduler.c ****     task->age = 0;
+ 128:system/scheduler.c **** 
+ 129:system/scheduler.c ****     osTasksQueueInsert(task);
+ 130:system/scheduler.c ****     return task;
+ 131:system/scheduler.c **** }
+ 382               		.loc 1 131 1 view .LVU88
+ 383 011c CE01      		movw r24,r28
+ 384               	/* epilogue start */
+ 385 011e DF91      		pop r29
+ 386 0120 CF91      		pop r28
+ 387 0122 1F91      		pop r17
+ 388 0124 0F91      		pop r16
+ 389               	.LVL29:
+ 390               		.loc 1 131 1 view .LVU89
+ 391 0126 FF90      		pop r15
+ 392 0128 EF90      		pop r14
+ 393 012a DF90      		pop r13
+ 394               	.LVL30:
+ 395               		.loc 1 131 1 view .LVU90
+ 396 012c CF90      		pop r12
+ 397 012e BF90      		pop r11
+ 398 0130 AF90      		pop r10
+ 399 0132 9F90      		pop r9
+ 400 0134 0895      		ret
+ 401               	.LVL31:
+ 402               	.L21:
+ 122:system/scheduler.c ****     task->sc = stack;
+ 403               		.loc 1 122 5 is_stmt 1 view .LVU91
+ 122:system/scheduler.c ****     task->sc = stack;
+ 404               		.loc 1 122 52 is_stmt 0 view .LVU92
+ 405 0136 C801      		movw r24,r16
+ 406 0138 0197      		sbiw r24,1
+ 122:system/scheduler.c ****     task->sc = stack;
+ 407               		.loc 1 122 16 view .LVU93
+ 408 013a 492D      		mov r20,r9
+ 409 013c 5A2D      		mov r21,r10
+ 410 013e 6B2D      		mov r22,r11
+ 411 0140 7C2D      		mov r23,r12
+ 412 0142 8E0D      		add r24,r14
+ 413 0144 9F1D      		adc r25,r15
+ 414 0146 0E94 0000 		call osInitializeStack
+ 415               	.LVL32:
+ 122:system/scheduler.c ****     task->sc = stack;
+ 416               		.loc 1 122 14 view .LVU94
+ 417 014a 9983      		std Y+1,r25
+ 418 014c 8883      		st Y,r24
+ 123:system/scheduler.c **** 
+ 419               		.loc 1 123 5 is_stmt 1 view .LVU95
+ 123:system/scheduler.c **** 
+ 420               		.loc 1 123 14 is_stmt 0 view .LVU96
+ 421 014e FB82      		std Y+3,r15
+ 422 0150 EA82      		std Y+2,r14
+ 125:system/scheduler.c ****     task->wait = 0;
+ 423               		.loc 1 125 5 is_stmt 1 view .LVU97
+ 125:system/scheduler.c ****     task->wait = 0;
+ 424               		.loc 1 125 20 is_stmt 0 view .LVU98
+ 425 0152 DC82      		std Y+4,r13
+ 126:system/scheduler.c ****     task->age = 0;
+ 426               		.loc 1 126 5 is_stmt 1 view .LVU99
+ 126:system/scheduler.c ****     task->age = 0;
+ 427               		.loc 1 126 16 is_stmt 0 view .LVU100
+ 428 0154 1E82      		std Y+6,__zero_reg__
+ 429 0156 1D82      		std Y+5,__zero_reg__
+ 127:system/scheduler.c **** 
+ 430               		.loc 1 127 5 is_stmt 1 view .LVU101
+ 127:system/scheduler.c **** 
+ 431               		.loc 1 127 15 is_stmt 0 view .LVU102
+ 432 0158 1F82      		std Y+7,__zero_reg__
+ 129:system/scheduler.c ****     return task;
+ 433               		.loc 1 129 5 is_stmt 1 view .LVU103
+ 434 015a CE01      		movw r24,r28
+ 435 015c 0E94 0000 		call osTasksQueueInsert
+ 436               	.LVL33:
+ 130:system/scheduler.c **** }
+ 437               		.loc 1 130 5 view .LVU104
+ 130:system/scheduler.c **** }
+ 438               		.loc 1 130 12 is_stmt 0 view .LVU105
+ 439 0160 00C0      		rjmp .L19
+ 440               		.cfi_endproc
+ 441               	.LFE21:
+ 443               	.global	osSchedulerInit
+ 445               	osSchedulerInit:
+ 446               	.LFB17:
+  37:system/scheduler.c ****     osCurrentTask = osCreateTask(osIdleTask, NULL, 64, 0);
+ 447               		.loc 1 37 1 is_stmt 1 view -0
+ 448               		.cfi_startproc
+ 449               	/* prologue: function */
+ 450               	/* frame size = 0 */
+ 451               	/* stack size = 0 */
+ 452               	.L__stack_usage = 0
+  38:system/scheduler.c **** }
+ 453               		.loc 1 38 5 view .LVU107
+  38:system/scheduler.c **** }
+ 454               		.loc 1 38 21 is_stmt 0 view .LVU108
+ 455 0162 20E0      		ldi r18,0
+ 456 0164 40E4      		ldi r20,lo8(64)
+ 457 0166 70E0      		ldi r23,0
+ 458 0168 60E0      		ldi r22,0
+ 459 016a 80E0      		ldi r24,lo8(gs(osIdleTask))
+ 460 016c 90E0      		ldi r25,hi8(gs(osIdleTask))
+ 461 016e 0E94 0000 		call osCreateTask
+ 462               	.LVL34:
+  38:system/scheduler.c **** }
+ 463               		.loc 1 38 19 view .LVU109
+ 464 0172 9093 0000 		sts osCurrentTask+1,r25
+ 465 0176 8093 0000 		sts osCurrentTask,r24
+ 466               	/* epilogue start */
+  39:system/scheduler.c **** 
+ 467               		.loc 1 39 1 view .LVU110
+ 468 017a 0895      		ret
+ 469               		.cfi_endproc
+ 470               	.LFE17:
+ 472               	.global	osTaskDestroy
+ 474               	osTaskDestroy:
+ 475               	.LVL35:
+ 476               	.LFB22:
+ 132:system/scheduler.c **** 
+ 133:system/scheduler.c **** void osTaskDestroy(TaskControlBlock *task)
+ 134:system/scheduler.c **** {
+ 477               		.loc 1 134 1 is_stmt 1 view -0
+ 478               		.cfi_startproc
+ 479               		.loc 1 134 1 is_stmt 0 view .LVU112
+ 480 017c CF93      		push r28
+ 481               	.LCFI17:
+ 482               		.cfi_def_cfa_offset 3
+ 483               		.cfi_offset 28, -2
+ 484 017e DF93      		push r29
+ 485               	.LCFI18:
+ 486               		.cfi_def_cfa_offset 4
+ 487               		.cfi_offset 29, -3
+ 488               	/* prologue: function */
+ 489               	/* frame size = 0 */
+ 490               	/* stack size = 2 */
+ 491               	.L__stack_usage = 2
+ 492 0180 EC01      		movw r28,r24
+ 135:system/scheduler.c ****     free(task->sc);
+ 493               		.loc 1 135 5 is_stmt 1 view .LVU113
+ 494 0182 8A81      		ldd r24,Y+2
+ 495 0184 9B81      		ldd r25,Y+3
+ 496               	.LVL36:
+ 497               		.loc 1 135 5 is_stmt 0 view .LVU114
+ 498 0186 0E94 0000 		call free
+ 499               	.LVL37:
+ 136:system/scheduler.c ****     free(task);
+ 500               		.loc 1 136 5 is_stmt 1 view .LVU115
+ 501 018a CE01      		movw r24,r28
+ 502               	/* epilogue start */
+ 137:system/scheduler.c **** }
+ 503               		.loc 1 137 1 is_stmt 0 view .LVU116
+ 504 018c DF91      		pop r29
+ 505 018e CF91      		pop r28
+ 506               	.LVL38:
+ 136:system/scheduler.c ****     free(task);
+ 507               		.loc 1 136 5 view .LVU117
+ 508 0190 0C94 0000 		jmp free
+ 509               	.LVL39:
+ 136:system/scheduler.c ****     free(task);
+ 510               		.loc 1 136 5 view .LVU118
+ 511               		.cfi_endproc
+ 512               	.LFE22:
+ 514               	.global	osTaskExit
+ 516               	osTaskExit:
+ 517               	.LFB19:
+  52:system/scheduler.c ****     DISABLE_INTERRUPTS
+ 518               		.loc 1 52 1 is_stmt 1 view -0
+ 519               		.cfi_startproc
+ 520               	/* prologue: function */
+ 521               	/* frame size = 0 */
+ 522               	/* stack size = 0 */
+ 523               	.L__stack_usage = 0
+  53:system/scheduler.c **** 
+ 524               		.loc 1 53 5 view .LVU120
+ 525               	/* #APP */
+ 526               	 ;  53 "system/scheduler.c" 1
+ 527 0194 F894      		cli
+ 528               	 ;  0 "" 2
+  56:system/scheduler.c **** 
+ 529               		.loc 1 56 5 view .LVU121
+ 530               	/* #NOAPP */
+ 531 0196 8091 0000 		lds r24,osCurrentTask
+ 532 019a 9091 0000 		lds r25,osCurrentTask+1
+ 533 019e 0E94 0000 		call osTasksQueueRemove
+ 534               	.LVL40:
+  59:system/scheduler.c **** 
+ 535               		.loc 1 59 5 view .LVU122
+ 536 01a2 8091 0000 		lds r24,osCurrentTask
+ 537 01a6 9091 0000 		lds r25,osCurrentTask+1
+ 538 01aa 0E94 0000 		call osTaskDestroy
+ 539               	.LVL41:
+  62:system/scheduler.c **** 
+ 540               		.loc 1 62 5 view .LVU123
+  62:system/scheduler.c **** 
+ 541               		.loc 1 62 19 is_stmt 0 view .LVU124
+ 542 01ae 1092 0000 		sts osCurrentTask+1,__zero_reg__
+ 543 01b2 1092 0000 		sts osCurrentTask,__zero_reg__
+  67:system/scheduler.c **** }
+ 544               		.loc 1 67 5 is_stmt 1 view .LVU125
+ 545 01b6 0E94 0000 		call osNonSavableYield
+ 546               	.LVL42:
+ 547               	/* epilogue start */
+  68:system/scheduler.c **** 
+ 548               		.loc 1 68 1 is_stmt 0 view .LVU126
+ 549 01ba 0895      		ret
+ 550               		.cfi_endproc
+ 551               	.LFE19:
+ 553               	.global	osCurrentTask
+ 554               		.section .bss
+ 557               	osCurrentTask:
+ 558 0000 0000      		.zero	2
+ 559               		.text
+ 560               	.Letext0:
+ 561               		.file 2 "/usr/avr/include/stdlib.h"
+ 562               		.file 3 "/usr/lib/gcc/avr/9.2.0/include/stddef.h"
+ 563               		.file 4 "/usr/avr/include/stdint.h"
+ 564               		.file 5 "/usr/avr/include/stdio.h"
+ 565               		.file 6 "system/tasks.h"
+ 566               		.file 7 "system/asm.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 scheduler.c
+     /tmp/ccRNvDNQ.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccRNvDNQ.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccRNvDNQ.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccRNvDNQ.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccRNvDNQ.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccRNvDNQ.s:12     .text:0000000000000000 osIdleTask
+     /tmp/ccRNvDNQ.s:32     .text:0000000000000002 osWait
+     /tmp/ccRNvDNQ.s:557    .bss:0000000000000000 osCurrentTask
+     /tmp/ccRNvDNQ.s:71     .text:0000000000000018 osContextSwitch
+     /tmp/ccRNvDNQ.s:283    .text:00000000000000d4 osCreateTask
+     /tmp/ccRNvDNQ.s:445    .text:0000000000000162 osSchedulerInit
+     /tmp/ccRNvDNQ.s:474    .text:000000000000017c osTaskDestroy
+     /tmp/ccRNvDNQ.s:516    .text:0000000000000194 osTaskExit
+
+UNDEFINED SYMBOLS
+osNonResumableYield
+osTasksQueueSize
+osTasksQueueAt
+malloc
+free
+osInitializeStack
+osTasksQueueInsert
+osTasksQueueRemove
+osNonSavableYield
+__do_clear_bss

@@ -1,0 +1,439 @@
+   1               		.file	"queue.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	osQueueCreate
+  12               	osQueueCreate:
+  13               	.LFB5:
+  14               		.file 1 "system/queue.c"
+   1:system/queue.c **** /*
+   2:system/queue.c ****  * Operating system for Atmel AVR microcontrollers
+   3:system/queue.c ****  * Copyright (c) 2015 Konrad Kusnierz <iryont@gmail.com>
+   4:system/queue.c ****  *
+   5:system/queue.c ****  * Permission is hereby granted, free of charge, to any person obtaining a copy
+   6:system/queue.c ****  * of this software and associated documentation files (the "Software"), to deal
+   7:system/queue.c ****  * in the Software without restriction, including without limitation the rights
+   8:system/queue.c ****  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   9:system/queue.c ****  * copies of the Software, and to permit persons to whom the Software is
+  10:system/queue.c ****  * furnished to do so, subject to the following conditions:
+  11:system/queue.c ****  *
+  12:system/queue.c ****  * The above copyright notice and this permission notice shall be included in
+  13:system/queue.c ****  * all copies or substantial portions of the Software.
+  14:system/queue.c ****  *
+  15:system/queue.c ****  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  16:system/queue.c ****  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  17:system/queue.c ****  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  18:system/queue.c ****  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  19:system/queue.c ****  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  20:system/queue.c ****  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  21:system/queue.c ****  * THE SOFTWARE.
+  22:system/queue.c ****  */
+  23:system/queue.c **** 
+  24:system/queue.c **** #include <stdlib.h>
+  25:system/queue.c **** #include "queue.h"
+  26:system/queue.c **** 
+  27:system/queue.c **** Queue* osQueueCreate()
+  28:system/queue.c **** {
+  15               		.loc 1 28 1 view -0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  29:system/queue.c ****     Queue* queue = (Queue*)malloc(sizeof(Queue));
+  21               		.loc 1 29 5 view .LVU1
+  22               		.loc 1 29 28 is_stmt 0 view .LVU2
+  23 0000 84E0      		ldi r24,lo8(4)
+  24 0002 90E0      		ldi r25,0
+  25 0004 0E94 0000 		call malloc
+  26               	.LVL0:
+  27 0008 FC01      		movw r30,r24
+  28               	.LVL1:
+  30:system/queue.c **** 
+  31:system/queue.c ****     queue->size = 0;
+  29               		.loc 1 31 5 is_stmt 1 view .LVU3
+  30               		.loc 1 31 17 is_stmt 0 view .LVU4
+  31 000a 1282      		std Z+2,__zero_reg__
+  32:system/queue.c ****     queue->length = 0;
+  32               		.loc 1 32 5 is_stmt 1 view .LVU5
+  33               		.loc 1 32 19 is_stmt 0 view .LVU6
+  34 000c 1382      		std Z+3,__zero_reg__
+  33:system/queue.c ****     queue->tasks = NULL;
+  35               		.loc 1 33 5 is_stmt 1 view .LVU7
+  36               		.loc 1 33 18 is_stmt 0 view .LVU8
+  37 000e 1182      		std Z+1,__zero_reg__
+  38 0010 1082      		st Z,__zero_reg__
+  34:system/queue.c **** 
+  35:system/queue.c ****     return queue;
+  39               		.loc 1 35 5 is_stmt 1 view .LVU9
+  40               	/* epilogue start */
+  36:system/queue.c **** }
+  41               		.loc 1 36 1 is_stmt 0 view .LVU10
+  42 0012 0895      		ret
+  43               		.cfi_endproc
+  44               	.LFE5:
+  46               	.global	osQueueDestroy
+  48               	osQueueDestroy:
+  49               	.LVL2:
+  50               	.LFB6:
+  37:system/queue.c **** 
+  38:system/queue.c **** void osQueueDestroy(Queue *queue)
+  39:system/queue.c **** {
+  51               		.loc 1 39 1 is_stmt 1 view -0
+  52               		.cfi_startproc
+  53               		.loc 1 39 1 is_stmt 0 view .LVU12
+  54 0014 CF93      		push r28
+  55               	.LCFI0:
+  56               		.cfi_def_cfa_offset 3
+  57               		.cfi_offset 28, -2
+  58 0016 DF93      		push r29
+  59               	.LCFI1:
+  60               		.cfi_def_cfa_offset 4
+  61               		.cfi_offset 29, -3
+  62               	/* prologue: function */
+  63               	/* frame size = 0 */
+  64               	/* stack size = 2 */
+  65               	.L__stack_usage = 2
+  66 0018 EC01      		movw r28,r24
+  40:system/queue.c ****     if(queue->length)
+  67               		.loc 1 40 5 is_stmt 1 view .LVU13
+  68               		.loc 1 40 7 is_stmt 0 view .LVU14
+  69 001a 8B81      		ldd r24,Y+3
+  70               	.LVL3:
+  71               		.loc 1 40 7 view .LVU15
+  72 001c 8823      		tst r24
+  73 001e 01F0      		breq .L3
+  41:system/queue.c ****         free(queue->tasks);
+  74               		.loc 1 41 9 is_stmt 1 view .LVU16
+  75 0020 8881      		ld r24,Y
+  76 0022 9981      		ldd r25,Y+1
+  77 0024 0E94 0000 		call free
+  78               	.LVL4:
+  79               	.L3:
+  42:system/queue.c **** 
+  43:system/queue.c ****     free(queue);
+  80               		.loc 1 43 5 view .LVU17
+  81 0028 CE01      		movw r24,r28
+  82               	/* epilogue start */
+  44:system/queue.c **** }
+  83               		.loc 1 44 1 is_stmt 0 view .LVU18
+  84 002a DF91      		pop r29
+  85 002c CF91      		pop r28
+  86               	.LVL5:
+  43:system/queue.c **** }
+  87               		.loc 1 43 5 view .LVU19
+  88 002e 0C94 0000 		jmp free
+  89               	.LVL6:
+  43:system/queue.c **** }
+  90               		.loc 1 43 5 view .LVU20
+  91               		.cfi_endproc
+  92               	.LFE6:
+  94               	.global	osQueueRemove
+  96               	osQueueRemove:
+  97               	.LVL7:
+  98               	.LFB7:
+  45:system/queue.c **** 
+  46:system/queue.c **** void osQueueRemove(Queue *queue, TaskControlBlock *task)
+  47:system/queue.c **** {
+  99               		.loc 1 47 1 is_stmt 1 view -0
+ 100               		.cfi_startproc
+ 101               		.loc 1 47 1 is_stmt 0 view .LVU22
+ 102 0032 0F93      		push r16
+ 103               	.LCFI2:
+ 104               		.cfi_def_cfa_offset 3
+ 105               		.cfi_offset 16, -2
+ 106 0034 1F93      		push r17
+ 107               	.LCFI3:
+ 108               		.cfi_def_cfa_offset 4
+ 109               		.cfi_offset 17, -3
+ 110 0036 CF93      		push r28
+ 111               	.LCFI4:
+ 112               		.cfi_def_cfa_offset 5
+ 113               		.cfi_offset 28, -4
+ 114 0038 DF93      		push r29
+ 115               	.LCFI5:
+ 116               		.cfi_def_cfa_offset 6
+ 117               		.cfi_offset 29, -5
+ 118               	/* prologue: function */
+ 119               	/* frame size = 0 */
+ 120               	/* stack size = 4 */
+ 121               	.L__stack_usage = 4
+ 122 003a FC01      		movw r30,r24
+ 123 003c 8B01      		movw r16,r22
+  48:system/queue.c ****     int8_t at = -1;
+ 124               		.loc 1 48 5 is_stmt 1 view .LVU23
+ 125               	.LVL8:
+  49:system/queue.c ****     for(int8_t i = 0; i < queue->size; i++) {
+ 126               		.loc 1 49 5 view .LVU24
+ 127               	.LBB2:
+ 128               		.loc 1 49 9 view .LVU25
+ 129               		.loc 1 49 32 is_stmt 0 view .LVU26
+ 130 003e 2281      		ldd r18,Z+2
+ 131 0040 822F      		mov r24,r18
+ 132               	.LVL9:
+ 133               		.loc 1 49 32 view .LVU27
+ 134 0042 90E0      		ldi r25,0
+ 135               		.loc 1 49 16 view .LVU28
+ 136 0044 30E0      		ldi r19,0
+ 137               	.LVL10:
+ 138               	.L8:
+ 139               		.loc 1 49 23 is_stmt 1 discriminator 1 view .LVU29
+ 140               		.loc 1 49 25 is_stmt 0 discriminator 1 view .LVU30
+ 141 0046 432F      		mov r20,r19
+ 142 0048 032E      		mov __tmp_reg__,r19
+ 143 004a 000C      		lsl r0
+ 144 004c 550B      		sbc r21,r21
+ 145               		.loc 1 49 5 discriminator 1 view .LVU31
+ 146 004e 4817      		cp r20,r24
+ 147 0050 5907      		cpc r21,r25
+ 148 0052 04F0      		brlt .L10
+ 149               	.LVL11:
+ 150               	.L7:
+ 151               	/* epilogue start */
+ 152               		.loc 1 49 5 discriminator 1 view .LVU32
+ 153               	.LBE2:
+  50:system/queue.c ****         if(queue->tasks[i] == task) {
+  51:system/queue.c ****             at = i;
+  52:system/queue.c ****             break;
+  53:system/queue.c ****         }
+  54:system/queue.c ****     }
+  55:system/queue.c **** 
+  56:system/queue.c ****     if(at != -1) {
+  57:system/queue.c ****         if(at != queue->size - 1) 
+  58:system/queue.c ****             queue->tasks[at] = queue->tasks[queue->size - 1];
+  59:system/queue.c **** 
+  60:system/queue.c ****         queue->tasks[queue->size - 1] = NULL;
+  61:system/queue.c ****         queue->size--;
+  62:system/queue.c ****     }
+  63:system/queue.c **** }
+ 154               		.loc 1 63 1 view .LVU33
+ 155 0054 DF91      		pop r29
+ 156 0056 CF91      		pop r28
+ 157 0058 1F91      		pop r17
+ 158 005a 0F91      		pop r16
+ 159               	.LVL12:
+ 160               		.loc 1 63 1 view .LVU34
+ 161 005c 0895      		ret
+ 162               	.LVL13:
+ 163               	.L10:
+ 164               	.LBB3:
+  50:system/queue.c ****         if(queue->tasks[i] == task) {
+ 165               		.loc 1 50 9 is_stmt 1 view .LVU35
+  50:system/queue.c ****         if(queue->tasks[i] == task) {
+ 166               		.loc 1 50 17 is_stmt 0 view .LVU36
+ 167 005e A081      		ld r26,Z
+ 168 0060 B181      		ldd r27,Z+1
+  50:system/queue.c ****         if(queue->tasks[i] == task) {
+ 169               		.loc 1 50 24 view .LVU37
+ 170 0062 EA01      		movw r28,r20
+ 171 0064 CC0F      		lsl r28
+ 172 0066 DD1F      		rol r29
+ 173 0068 CA0F      		add r28,r26
+ 174 006a DB1F      		adc r29,r27
+  50:system/queue.c ****         if(queue->tasks[i] == task) {
+ 175               		.loc 1 50 11 view .LVU38
+ 176 006c 6881      		ld r22,Y
+ 177 006e 7981      		ldd r23,Y+1
+ 178 0070 6017      		cp r22,r16
+ 179 0072 7107      		cpc r23,r17
+ 180 0074 01F0      		breq .L9
+  49:system/queue.c ****     for(int8_t i = 0; i < queue->size; i++) {
+ 181               		.loc 1 49 40 is_stmt 1 discriminator 2 view .LVU39
+ 182 0076 3F5F      		subi r19,lo8(-(1))
+ 183               	.LVL14:
+  49:system/queue.c ****     for(int8_t i = 0; i < queue->size; i++) {
+ 184               		.loc 1 49 40 is_stmt 0 discriminator 2 view .LVU40
+ 185 0078 00C0      		rjmp .L8
+ 186               	.L9:
+ 187               	.LVL15:
+  49:system/queue.c ****     for(int8_t i = 0; i < queue->size; i++) {
+ 188               		.loc 1 49 40 discriminator 2 view .LVU41
+ 189               	.LBE3:
+  56:system/queue.c ****         if(at != queue->size - 1) 
+ 190               		.loc 1 56 5 is_stmt 1 view .LVU42
+  56:system/queue.c ****         if(at != queue->size - 1) 
+ 191               		.loc 1 56 7 is_stmt 0 view .LVU43
+ 192 007a 3F3F      		cpi r19,lo8(-1)
+ 193 007c 01F0      		breq .L7
+  57:system/queue.c ****             queue->tasks[at] = queue->tasks[queue->size - 1];
+ 194               		.loc 1 57 9 is_stmt 1 view .LVU44
+ 195 007e BC01      		movw r22,r24
+ 196 0080 6150      		subi r22,1
+ 197 0082 7048      		sbci r23,-128
+ 198 0084 660F      		lsl r22
+ 199 0086 771F      		rol r23
+ 200               	.LVL16:
+  57:system/queue.c ****             queue->tasks[at] = queue->tasks[queue->size - 1];
+ 201               		.loc 1 57 9 is_stmt 0 view .LVU45
+ 202 0088 A60F      		add r26,r22
+ 203 008a B71F      		adc r27,r23
+  57:system/queue.c ****             queue->tasks[at] = queue->tasks[queue->size - 1];
+ 204               		.loc 1 57 30 view .LVU46
+ 205 008c 0197      		sbiw r24,1
+  57:system/queue.c ****             queue->tasks[at] = queue->tasks[queue->size - 1];
+ 206               		.loc 1 57 11 view .LVU47
+ 207 008e 4817      		cp r20,r24
+ 208 0090 5907      		cpc r21,r25
+ 209 0092 01F0      		breq .L12
+  58:system/queue.c **** 
+ 210               		.loc 1 58 13 is_stmt 1 view .LVU48
+  58:system/queue.c **** 
+ 211               		.loc 1 58 44 is_stmt 0 view .LVU49
+ 212 0094 8D91      		ld r24,X+
+ 213 0096 9C91      		ld r25,X
+ 214 0098 1197      		sbiw r26,1
+  58:system/queue.c **** 
+ 215               		.loc 1 58 30 view .LVU50
+ 216 009a 9983      		std Y+1,r25
+ 217 009c 8883      		st Y,r24
+ 218               	.L12:
+  60:system/queue.c ****         queue->size--;
+ 219               		.loc 1 60 9 is_stmt 1 view .LVU51
+  60:system/queue.c ****         queue->size--;
+ 220               		.loc 1 60 39 is_stmt 0 view .LVU52
+ 221 009e 1D92      		st X+,__zero_reg__
+ 222 00a0 1C92      		st X,__zero_reg__
+  61:system/queue.c ****     }
+ 223               		.loc 1 61 9 is_stmt 1 view .LVU53
+  61:system/queue.c ****     }
+ 224               		.loc 1 61 20 is_stmt 0 view .LVU54
+ 225 00a2 2150      		subi r18,lo8(-(-1))
+ 226 00a4 2283      		std Z+2,r18
+ 227               	.LVL17:
+ 228               		.loc 1 63 1 view .LVU55
+ 229 00a6 00C0      		rjmp .L7
+ 230               		.cfi_endproc
+ 231               	.LFE7:
+ 233               	.global	osQueueInsert
+ 235               	osQueueInsert:
+ 236               	.LVL18:
+ 237               	.LFB8:
+  64:system/queue.c **** 
+  65:system/queue.c **** void osQueueInsert(Queue *queue, TaskControlBlock *task)
+  66:system/queue.c **** {
+ 238               		.loc 1 66 1 is_stmt 1 view -0
+ 239               		.cfi_startproc
+ 240               		.loc 1 66 1 is_stmt 0 view .LVU57
+ 241 00a8 0F93      		push r16
+ 242               	.LCFI6:
+ 243               		.cfi_def_cfa_offset 3
+ 244               		.cfi_offset 16, -2
+ 245 00aa 1F93      		push r17
+ 246               	.LCFI7:
+ 247               		.cfi_def_cfa_offset 4
+ 248               		.cfi_offset 17, -3
+ 249 00ac CF93      		push r28
+ 250               	.LCFI8:
+ 251               		.cfi_def_cfa_offset 5
+ 252               		.cfi_offset 28, -4
+ 253 00ae DF93      		push r29
+ 254               	.LCFI9:
+ 255               		.cfi_def_cfa_offset 6
+ 256               		.cfi_offset 29, -5
+ 257               	/* prologue: function */
+ 258               	/* frame size = 0 */
+ 259               	/* stack size = 4 */
+ 260               	.L__stack_usage = 4
+ 261 00b0 EC01      		movw r28,r24
+ 262 00b2 8B01      		movw r16,r22
+  67:system/queue.c ****     if(queue->size + 1 >= queue->length) {
+ 263               		.loc 1 67 5 is_stmt 1 view .LVU58
+ 264               		.loc 1 67 32 is_stmt 0 view .LVU59
+ 265 00b4 6B81      		ldd r22,Y+3
+ 266               	.LVL19:
+ 267               		.loc 1 67 13 view .LVU60
+ 268 00b6 8A81      		ldd r24,Y+2
+ 269               	.LVL20:
+ 270               		.loc 1 67 13 view .LVU61
+ 271 00b8 90E0      		ldi r25,0
+ 272               		.loc 1 67 20 view .LVU62
+ 273 00ba 0196      		adiw r24,1
+ 274               		.loc 1 67 7 view .LVU63
+ 275 00bc 6817      		cp r22,r24
+ 276 00be 1906      		cpc __zero_reg__,r25
+ 277 00c0 01F0      		breq .+2
+ 278 00c2 04F4      		brge .L17
+  68:system/queue.c ****         queue->length++;
+ 279               		.loc 1 68 9 is_stmt 1 view .LVU64
+ 280               		.loc 1 68 22 is_stmt 0 view .LVU65
+ 281 00c4 6F5F      		subi r22,lo8(-(1))
+ 282 00c6 6B83      		std Y+3,r22
+  69:system/queue.c ****         queue->tasks = (TaskControlBlock**)realloc(queue->tasks, sizeof(TaskControlBlock*) * queue-
+ 283               		.loc 1 69 9 is_stmt 1 view .LVU66
+ 284               		.loc 1 69 44 is_stmt 0 view .LVU67
+ 285 00c8 70E0      		ldi r23,0
+ 286 00ca 660F      		lsl r22
+ 287 00cc 771F      		rol r23
+ 288 00ce 8881      		ld r24,Y
+ 289 00d0 9981      		ldd r25,Y+1
+ 290 00d2 0E94 0000 		call realloc
+ 291               	.LVL21:
+ 292               		.loc 1 69 22 view .LVU68
+ 293 00d6 9983      		std Y+1,r25
+ 294 00d8 8883      		st Y,r24
+ 295               	.L17:
+  70:system/queue.c ****     }
+  71:system/queue.c **** 
+  72:system/queue.c ****     queue->tasks[queue->size] = task;
+ 296               		.loc 1 72 5 is_stmt 1 view .LVU69
+ 297               		.loc 1 72 23 is_stmt 0 view .LVU70
+ 298 00da 8A81      		ldd r24,Y+2
+ 299               		.loc 1 72 17 view .LVU71
+ 300 00dc 282F      		mov r18,r24
+ 301 00de 30E0      		ldi r19,0
+ 302 00e0 220F      		lsl r18
+ 303 00e2 331F      		rol r19
+ 304               		.loc 1 72 31 view .LVU72
+ 305 00e4 E881      		ld r30,Y
+ 306 00e6 F981      		ldd r31,Y+1
+ 307 00e8 E20F      		add r30,r18
+ 308 00ea F31F      		adc r31,r19
+ 309 00ec 0083      		st Z,r16
+ 310 00ee 1183      		std Z+1,r17
+  73:system/queue.c ****     queue->size++;
+ 311               		.loc 1 73 5 is_stmt 1 view .LVU73
+ 312               		.loc 1 73 16 is_stmt 0 view .LVU74
+ 313 00f0 8F5F      		subi r24,lo8(-(1))
+ 314 00f2 8A83      		std Y+2,r24
+ 315               	/* epilogue start */
+  74:system/queue.c **** }
+ 316               		.loc 1 74 1 view .LVU75
+ 317 00f4 DF91      		pop r29
+ 318 00f6 CF91      		pop r28
+ 319               	.LVL22:
+ 320               		.loc 1 74 1 view .LVU76
+ 321 00f8 1F91      		pop r17
+ 322 00fa 0F91      		pop r16
+ 323               	.LVL23:
+ 324               		.loc 1 74 1 view .LVU77
+ 325 00fc 0895      		ret
+ 326               		.cfi_endproc
+ 327               	.LFE8:
+ 329               	.Letext0:
+ 330               		.file 2 "/usr/avr/include/stdlib.h"
+ 331               		.file 3 "/usr/lib/gcc/avr/9.2.0/include/stddef.h"
+ 332               		.file 4 "/usr/avr/include/stdint.h"
+ 333               		.file 5 "/usr/avr/include/stdio.h"
+ 334               		.file 6 "system/tasks.h"
+ 335               		.file 7 "system/queue.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 queue.c
+     /tmp/ccP1Epdp.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccP1Epdp.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccP1Epdp.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccP1Epdp.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccP1Epdp.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccP1Epdp.s:12     .text:0000000000000000 osQueueCreate
+     /tmp/ccP1Epdp.s:48     .text:0000000000000014 osQueueDestroy
+     /tmp/ccP1Epdp.s:96     .text:0000000000000032 osQueueRemove
+     /tmp/ccP1Epdp.s:235    .text:00000000000000a8 osQueueInsert
+
+UNDEFINED SYMBOLS
+malloc
+free
+realloc

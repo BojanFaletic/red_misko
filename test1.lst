@@ -1,0 +1,391 @@
+   1               		.file	"test1.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.startup,"ax",@progbits
+  11               	.global	main
+  13               	main:
+  14               	.LFB0:
+  15               		.file 1 "test1.c"
+   1:test1.c       **** #include <avr/interrupt.h>
+   2:test1.c       **** 
+   3:test1.c       **** #include "lib/gpio.h"
+   4:test1.c       **** #include "lib/io_interrupt.h"
+   5:test1.c       **** 
+   6:test1.c       **** #define DELAY 16000
+   7:test1.c       **** 
+   8:test1.c       **** int main()
+   9:test1.c       **** {
+  16               		.loc 1 9 1 view -0
+  17               		.cfi_startproc
+  18 0000 CDB7      		in r28,__SP_L__
+  19 0002 DEB7      		in r29,__SP_H__
+  20               	.LCFI0:
+  21               		.cfi_def_cfa_register 28
+  22 0004 2897      		sbiw r28,8
+  23               	.LCFI1:
+  24               		.cfi_def_cfa_offset 10
+  25 0006 0FB6      		in __tmp_reg__,__SREG__
+  26 0008 F894      		cli
+  27 000a DEBF      		out __SP_H__,r29
+  28 000c 0FBE      		out __SREG__,__tmp_reg__
+  29 000e CDBF      		out __SP_L__,r28
+  30               	/* prologue: function */
+  31               	/* frame size = 8 */
+  32               	/* stack size = 8 */
+  33               	.L__stack_usage = 8
+  10:test1.c       ****     gpio_init();
+  34               		.loc 1 10 5 view .LVU1
+  35 0010 0E94 0000 		call gpio_init
+  36               	.LVL0:
+  11:test1.c       ****     io_interrupt_enable(0);
+  37               		.loc 1 11 5 view .LVU2
+  38 0014 90E0      		ldi r25,0
+  39 0016 80E0      		ldi r24,0
+  40 0018 0E94 0000 		call io_interrupt_enable
+  41               	.LVL1:
+  12:test1.c       ****     io_interrupt_enable(1);
+  42               		.loc 1 12 5 view .LVU3
+  43 001c 81E0      		ldi r24,lo8(1)
+  44 001e 90E0      		ldi r25,0
+  45 0020 0E94 0000 		call io_interrupt_enable
+  46               	.LVL2:
+  13:test1.c       ****     io_pullup_enable(0);
+  47               		.loc 1 13 5 view .LVU4
+  48 0024 90E0      		ldi r25,0
+  49 0026 80E0      		ldi r24,0
+  50 0028 0E94 0000 		call io_pullup_enable
+  51               	.LVL3:
+  14:test1.c       ****     io_pullup_enable(1);
+  52               		.loc 1 14 5 view .LVU5
+  53 002c 81E0      		ldi r24,lo8(1)
+  54 002e 90E0      		ldi r25,0
+  55 0030 0E94 0000 		call io_pullup_enable
+  56               	.LVL4:
+  57               	.L6:
+  15:test1.c       **** 
+  16:test1.c       ****     while(1)
+  58               		.loc 1 16 5 view .LVU6
+  17:test1.c       ****     {
+  18:test1.c       ****         gpio_write(1,1);
+  59               		.loc 1 18 9 view .LVU7
+  60 0034 61E0      		ldi r22,lo8(1)
+  61 0036 81E0      		ldi r24,lo8(1)
+  62 0038 0E94 0000 		call gpio_write
+  63               	.LVL5:
+  19:test1.c       ****         for (volatile unsigned long i = 0; i < DELAY; i++);
+  64               		.loc 1 19 9 view .LVU8
+  65               	.LBB2:
+  66               		.loc 1 19 14 view .LVU9
+  67               		.loc 1 19 37 is_stmt 0 view .LVU10
+  68 003c 1D82      		std Y+5,__zero_reg__
+  69 003e 1E82      		std Y+6,__zero_reg__
+  70 0040 1F82      		std Y+7,__zero_reg__
+  71 0042 1886      		std Y+8,__zero_reg__
+  72               	.L2:
+  73               		.loc 1 19 44 is_stmt 1 discriminator 1 view .LVU11
+  74               		.loc 1 19 46 is_stmt 0 discriminator 1 view .LVU12
+  75 0044 8D81      		ldd r24,Y+5
+  76 0046 9E81      		ldd r25,Y+6
+  77 0048 AF81      		ldd r26,Y+7
+  78 004a B885      		ldd r27,Y+8
+  79               		.loc 1 19 9 discriminator 1 view .LVU13
+  80 004c 8038      		cpi r24,-128
+  81 004e 9E43      		sbci r25,62
+  82 0050 A105      		cpc r26,__zero_reg__
+  83 0052 B105      		cpc r27,__zero_reg__
+  84 0054 00F0      		brlo .L3
+  85               	.LBE2:
+  20:test1.c       ****         gpio_write(1,0);
+  86               		.loc 1 20 9 is_stmt 1 view .LVU14
+  87 0056 60E0      		ldi r22,0
+  88 0058 81E0      		ldi r24,lo8(1)
+  89 005a 0E94 0000 		call gpio_write
+  90               	.LVL6:
+  21:test1.c       ****         for (volatile unsigned long i = 0; i < DELAY; i++);
+  91               		.loc 1 21 9 view .LVU15
+  92               	.LBB3:
+  93               		.loc 1 21 14 view .LVU16
+  94               		.loc 1 21 37 is_stmt 0 view .LVU17
+  95 005e 1982      		std Y+1,__zero_reg__
+  96 0060 1A82      		std Y+2,__zero_reg__
+  97 0062 1B82      		std Y+3,__zero_reg__
+  98 0064 1C82      		std Y+4,__zero_reg__
+  99               	.L4:
+ 100               		.loc 1 21 44 is_stmt 1 discriminator 1 view .LVU18
+ 101               		.loc 1 21 46 is_stmt 0 discriminator 1 view .LVU19
+ 102 0066 8981      		ldd r24,Y+1
+ 103 0068 9A81      		ldd r25,Y+2
+ 104 006a AB81      		ldd r26,Y+3
+ 105 006c BC81      		ldd r27,Y+4
+ 106               		.loc 1 21 9 discriminator 1 view .LVU20
+ 107 006e 8038      		cpi r24,-128
+ 108 0070 9E43      		sbci r25,62
+ 109 0072 A105      		cpc r26,__zero_reg__
+ 110 0074 B105      		cpc r27,__zero_reg__
+ 111 0076 00F4      		brsh .L6
+ 112               		.loc 1 21 59 is_stmt 1 discriminator 3 view .LVU21
+ 113               		.loc 1 21 55 discriminator 3 view .LVU22
+ 114               		.loc 1 21 56 is_stmt 0 discriminator 3 view .LVU23
+ 115 0078 8981      		ldd r24,Y+1
+ 116 007a 9A81      		ldd r25,Y+2
+ 117 007c AB81      		ldd r26,Y+3
+ 118 007e BC81      		ldd r27,Y+4
+ 119 0080 0196      		adiw r24,1
+ 120 0082 A11D      		adc r26,__zero_reg__
+ 121 0084 B11D      		adc r27,__zero_reg__
+ 122 0086 8983      		std Y+1,r24
+ 123 0088 9A83      		std Y+2,r25
+ 124 008a AB83      		std Y+3,r26
+ 125 008c BC83      		std Y+4,r27
+ 126 008e 00C0      		rjmp .L4
+ 127               	.L3:
+ 128               	.LBE3:
+ 129               	.LBB4:
+  19:test1.c       ****         for (volatile unsigned long i = 0; i < DELAY; i++);
+ 130               		.loc 1 19 59 is_stmt 1 discriminator 3 view .LVU24
+  19:test1.c       ****         for (volatile unsigned long i = 0; i < DELAY; i++);
+ 131               		.loc 1 19 55 discriminator 3 view .LVU25
+  19:test1.c       ****         for (volatile unsigned long i = 0; i < DELAY; i++);
+ 132               		.loc 1 19 56 is_stmt 0 discriminator 3 view .LVU26
+ 133 0090 8D81      		ldd r24,Y+5
+ 134 0092 9E81      		ldd r25,Y+6
+ 135 0094 AF81      		ldd r26,Y+7
+ 136 0096 B885      		ldd r27,Y+8
+ 137 0098 0196      		adiw r24,1
+ 138 009a A11D      		adc r26,__zero_reg__
+ 139 009c B11D      		adc r27,__zero_reg__
+ 140 009e 8D83      		std Y+5,r24
+ 141 00a0 9E83      		std Y+6,r25
+ 142 00a2 AF83      		std Y+7,r26
+ 143 00a4 B887      		std Y+8,r27
+ 144 00a6 00C0      		rjmp .L2
+ 145               	.LBE4:
+ 146               		.cfi_endproc
+ 147               	.LFE0:
+ 149               		.text
+ 150               	.global	__vector_1
+ 152               	__vector_1:
+ 153               	.LFB1:
+  22:test1.c       ****     }
+  23:test1.c       **** }
+  24:test1.c       **** 
+  25:test1.c       **** 
+  26:test1.c       **** ISR(INT0_vect)
+  27:test1.c       **** {
+ 154               		.loc 1 27 1 is_stmt 1 view -0
+ 155               		.cfi_startproc
+ 156 0000 1F92      		push r1
+ 157               	.LCFI2:
+ 158               		.cfi_def_cfa_offset 3
+ 159               		.cfi_offset 1, -2
+ 160 0002 0F92      		push r0
+ 161               	.LCFI3:
+ 162               		.cfi_def_cfa_offset 4
+ 163               		.cfi_offset 0, -3
+ 164 0004 0FB6      		in r0,__SREG__
+ 165 0006 0F92      		push r0
+ 166 0008 1124      		clr __zero_reg__
+ 167 000a 2F93      		push r18
+ 168               	.LCFI4:
+ 169               		.cfi_def_cfa_offset 5
+ 170               		.cfi_offset 18, -4
+ 171 000c 3F93      		push r19
+ 172               	.LCFI5:
+ 173               		.cfi_def_cfa_offset 6
+ 174               		.cfi_offset 19, -5
+ 175 000e 4F93      		push r20
+ 176               	.LCFI6:
+ 177               		.cfi_def_cfa_offset 7
+ 178               		.cfi_offset 20, -6
+ 179 0010 5F93      		push r21
+ 180               	.LCFI7:
+ 181               		.cfi_def_cfa_offset 8
+ 182               		.cfi_offset 21, -7
+ 183 0012 6F93      		push r22
+ 184               	.LCFI8:
+ 185               		.cfi_def_cfa_offset 9
+ 186               		.cfi_offset 22, -8
+ 187 0014 7F93      		push r23
+ 188               	.LCFI9:
+ 189               		.cfi_def_cfa_offset 10
+ 190               		.cfi_offset 23, -9
+ 191 0016 8F93      		push r24
+ 192               	.LCFI10:
+ 193               		.cfi_def_cfa_offset 11
+ 194               		.cfi_offset 24, -10
+ 195 0018 9F93      		push r25
+ 196               	.LCFI11:
+ 197               		.cfi_def_cfa_offset 12
+ 198               		.cfi_offset 25, -11
+ 199 001a AF93      		push r26
+ 200               	.LCFI12:
+ 201               		.cfi_def_cfa_offset 13
+ 202               		.cfi_offset 26, -12
+ 203 001c BF93      		push r27
+ 204               	.LCFI13:
+ 205               		.cfi_def_cfa_offset 14
+ 206               		.cfi_offset 27, -13
+ 207 001e EF93      		push r30
+ 208               	.LCFI14:
+ 209               		.cfi_def_cfa_offset 15
+ 210               		.cfi_offset 30, -14
+ 211 0020 FF93      		push r31
+ 212               	.LCFI15:
+ 213               		.cfi_def_cfa_offset 16
+ 214               		.cfi_offset 31, -15
+ 215               	/* prologue: Signal */
+ 216               	/* frame size = 0 */
+ 217               	/* stack size = 15 */
+ 218               	.L__stack_usage = 15
+  28:test1.c       ****     gpio_write(2,1);
+ 219               		.loc 1 28 5 view .LVU28
+ 220 0022 61E0      		ldi r22,lo8(1)
+ 221 0024 82E0      		ldi r24,lo8(2)
+ 222 0026 0E94 0000 		call gpio_write
+ 223               	.LVL7:
+ 224               	/* epilogue start */
+  29:test1.c       **** }
+ 225               		.loc 1 29 1 is_stmt 0 view .LVU29
+ 226 002a FF91      		pop r31
+ 227 002c EF91      		pop r30
+ 228 002e BF91      		pop r27
+ 229 0030 AF91      		pop r26
+ 230 0032 9F91      		pop r25
+ 231 0034 8F91      		pop r24
+ 232 0036 7F91      		pop r23
+ 233 0038 6F91      		pop r22
+ 234 003a 5F91      		pop r21
+ 235 003c 4F91      		pop r20
+ 236 003e 3F91      		pop r19
+ 237 0040 2F91      		pop r18
+ 238 0042 0F90      		pop r0
+ 239 0044 0FBE      		out __SREG__,r0
+ 240 0046 0F90      		pop r0
+ 241 0048 1F90      		pop r1
+ 242 004a 1895      		reti
+ 243               		.cfi_endproc
+ 244               	.LFE1:
+ 246               	.global	__vector_2
+ 248               	__vector_2:
+ 249               	.LFB2:
+  30:test1.c       **** 
+  31:test1.c       **** ISR(INT1_vect)
+  32:test1.c       **** {
+ 250               		.loc 1 32 1 is_stmt 1 view -0
+ 251               		.cfi_startproc
+ 252 004c 1F92      		push r1
+ 253               	.LCFI16:
+ 254               		.cfi_def_cfa_offset 3
+ 255               		.cfi_offset 1, -2
+ 256 004e 0F92      		push r0
+ 257               	.LCFI17:
+ 258               		.cfi_def_cfa_offset 4
+ 259               		.cfi_offset 0, -3
+ 260 0050 0FB6      		in r0,__SREG__
+ 261 0052 0F92      		push r0
+ 262 0054 1124      		clr __zero_reg__
+ 263 0056 2F93      		push r18
+ 264               	.LCFI18:
+ 265               		.cfi_def_cfa_offset 5
+ 266               		.cfi_offset 18, -4
+ 267 0058 3F93      		push r19
+ 268               	.LCFI19:
+ 269               		.cfi_def_cfa_offset 6
+ 270               		.cfi_offset 19, -5
+ 271 005a 4F93      		push r20
+ 272               	.LCFI20:
+ 273               		.cfi_def_cfa_offset 7
+ 274               		.cfi_offset 20, -6
+ 275 005c 5F93      		push r21
+ 276               	.LCFI21:
+ 277               		.cfi_def_cfa_offset 8
+ 278               		.cfi_offset 21, -7
+ 279 005e 6F93      		push r22
+ 280               	.LCFI22:
+ 281               		.cfi_def_cfa_offset 9
+ 282               		.cfi_offset 22, -8
+ 283 0060 7F93      		push r23
+ 284               	.LCFI23:
+ 285               		.cfi_def_cfa_offset 10
+ 286               		.cfi_offset 23, -9
+ 287 0062 8F93      		push r24
+ 288               	.LCFI24:
+ 289               		.cfi_def_cfa_offset 11
+ 290               		.cfi_offset 24, -10
+ 291 0064 9F93      		push r25
+ 292               	.LCFI25:
+ 293               		.cfi_def_cfa_offset 12
+ 294               		.cfi_offset 25, -11
+ 295 0066 AF93      		push r26
+ 296               	.LCFI26:
+ 297               		.cfi_def_cfa_offset 13
+ 298               		.cfi_offset 26, -12
+ 299 0068 BF93      		push r27
+ 300               	.LCFI27:
+ 301               		.cfi_def_cfa_offset 14
+ 302               		.cfi_offset 27, -13
+ 303 006a EF93      		push r30
+ 304               	.LCFI28:
+ 305               		.cfi_def_cfa_offset 15
+ 306               		.cfi_offset 30, -14
+ 307 006c FF93      		push r31
+ 308               	.LCFI29:
+ 309               		.cfi_def_cfa_offset 16
+ 310               		.cfi_offset 31, -15
+ 311               	/* prologue: Signal */
+ 312               	/* frame size = 0 */
+ 313               	/* stack size = 15 */
+ 314               	.L__stack_usage = 15
+  33:test1.c       ****     gpio_write(2,0);
+ 315               		.loc 1 33 5 view .LVU31
+ 316 006e 60E0      		ldi r22,0
+ 317 0070 82E0      		ldi r24,lo8(2)
+ 318 0072 0E94 0000 		call gpio_write
+ 319               	.LVL8:
+ 320               	/* epilogue start */
+  34:test1.c       **** }
+ 321               		.loc 1 34 1 is_stmt 0 view .LVU32
+ 322 0076 FF91      		pop r31
+ 323 0078 EF91      		pop r30
+ 324 007a BF91      		pop r27
+ 325 007c AF91      		pop r26
+ 326 007e 9F91      		pop r25
+ 327 0080 8F91      		pop r24
+ 328 0082 7F91      		pop r23
+ 329 0084 6F91      		pop r22
+ 330 0086 5F91      		pop r21
+ 331 0088 4F91      		pop r20
+ 332 008a 3F91      		pop r19
+ 333 008c 2F91      		pop r18
+ 334 008e 0F90      		pop r0
+ 335 0090 0FBE      		out __SREG__,r0
+ 336 0092 0F90      		pop r0
+ 337 0094 1F90      		pop r1
+ 338 0096 1895      		reti
+ 339               		.cfi_endproc
+ 340               	.LFE2:
+ 342               	.Letext0:
+ 343               		.file 2 "lib/gpio.h"
+ 344               		.file 3 "lib/io_interrupt.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 test1.c
+     /tmp/ccnFjKA5.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccnFjKA5.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccnFjKA5.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccnFjKA5.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccnFjKA5.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccnFjKA5.s:13     .text.startup:0000000000000000 main
+     /tmp/ccnFjKA5.s:152    .text:0000000000000000 __vector_1
+     /tmp/ccnFjKA5.s:248    .text:000000000000004c __vector_2
+
+UNDEFINED SYMBOLS
+gpio_init
+io_interrupt_enable
+io_pullup_enable
+gpio_write

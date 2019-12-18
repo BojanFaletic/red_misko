@@ -1,0 +1,252 @@
+   1               		.file	"tasks.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	osTasksQueueInit
+  12               	osTasksQueueInit:
+  13               	.LFB1:
+  14               		.file 1 "system/tasks.c"
+   1:system/tasks.c **** /*
+   2:system/tasks.c ****  * Operating system for Atmel AVR microcontrollers
+   3:system/tasks.c ****  * Copyright (c) 2015 Konrad Kusnierz <iryont@gmail.com>
+   4:system/tasks.c ****  *
+   5:system/tasks.c ****  * Permission is hereby granted, free of charge, to any person obtaining a copy
+   6:system/tasks.c ****  * of this software and associated documentation files (the "Software"), to deal
+   7:system/tasks.c ****  * in the Software without restriction, including without limitation the rights
+   8:system/tasks.c ****  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   9:system/tasks.c ****  * copies of the Software, and to permit persons to whom the Software is
+  10:system/tasks.c ****  * furnished to do so, subject to the following conditions:
+  11:system/tasks.c ****  *
+  12:system/tasks.c ****  * The above copyright notice and this permission notice shall be included in
+  13:system/tasks.c ****  * all copies or substantial portions of the Software.
+  14:system/tasks.c ****  *
+  15:system/tasks.c ****  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  16:system/tasks.c ****  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  17:system/tasks.c ****  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  18:system/tasks.c ****  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  19:system/tasks.c ****  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  20:system/tasks.c ****  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  21:system/tasks.c ****  * THE SOFTWARE.
+  22:system/tasks.c ****  */
+  23:system/tasks.c **** 
+  24:system/tasks.c **** #include "queue.h"
+  25:system/tasks.c **** #include "tasks.h"
+  26:system/tasks.c **** 
+  27:system/tasks.c **** // tasks queue
+  28:system/tasks.c **** Queue* osQueue = NULL;
+  29:system/tasks.c **** 
+  30:system/tasks.c **** void osTasksQueueInit()
+  31:system/tasks.c **** {
+  15               		.loc 1 31 1 view -0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  32:system/tasks.c ****     osQueue = osQueueCreate();
+  21               		.loc 1 32 5 view .LVU1
+  22               		.loc 1 32 15 is_stmt 0 view .LVU2
+  23 0000 0E94 0000 		call osQueueCreate
+  24               	.LVL0:
+  25               		.loc 1 32 13 view .LVU3
+  26 0004 9093 0000 		sts osQueue+1,r25
+  27 0008 8093 0000 		sts osQueue,r24
+  28               	/* epilogue start */
+  33:system/tasks.c **** }
+  29               		.loc 1 33 1 view .LVU4
+  30 000c 0895      		ret
+  31               		.cfi_endproc
+  32               	.LFE1:
+  34               	.global	osTasksQueueDestroy
+  36               	osTasksQueueDestroy:
+  37               	.LFB2:
+  34:system/tasks.c **** 
+  35:system/tasks.c **** void osTasksQueueDestroy()
+  36:system/tasks.c **** {
+  38               		.loc 1 36 1 is_stmt 1 view -0
+  39               		.cfi_startproc
+  40               	/* prologue: function */
+  41               	/* frame size = 0 */
+  42               	/* stack size = 0 */
+  43               	.L__stack_usage = 0
+  37:system/tasks.c ****     osQueueDestroy(osQueue);
+  44               		.loc 1 37 5 view .LVU6
+  45 000e 8091 0000 		lds r24,osQueue
+  46 0012 9091 0000 		lds r25,osQueue+1
+  47 0016 0C94 0000 		jmp osQueueDestroy
+  48               	.LVL1:
+  49               		.cfi_endproc
+  50               	.LFE2:
+  52               	.global	osTasksQueueSize
+  54               	osTasksQueueSize:
+  55               	.LFB3:
+  38:system/tasks.c **** }
+  39:system/tasks.c **** 
+  40:system/tasks.c **** uint8_t osTasksQueueSize()
+  41:system/tasks.c **** {
+  56               		.loc 1 41 1 view -0
+  57               		.cfi_startproc
+  58               	/* prologue: function */
+  59               	/* frame size = 0 */
+  60               	/* stack size = 0 */
+  61               	.L__stack_usage = 0
+  42:system/tasks.c ****     return osQueue->size;
+  62               		.loc 1 42 5 view .LVU8
+  63               		.loc 1 42 19 is_stmt 0 view .LVU9
+  64 001a E091 0000 		lds r30,osQueue
+  65 001e F091 0000 		lds r31,osQueue+1
+  43:system/tasks.c **** }
+  66               		.loc 1 43 1 view .LVU10
+  67 0022 8281      		ldd r24,Z+2
+  68               	/* epilogue start */
+  69 0024 0895      		ret
+  70               		.cfi_endproc
+  71               	.LFE3:
+  73               	.global	osTasksQueueAt
+  75               	osTasksQueueAt:
+  76               	.LVL2:
+  77               	.LFB4:
+  44:system/tasks.c **** 
+  45:system/tasks.c **** TaskControlBlock* osTasksQueueAt(int8_t at)
+  46:system/tasks.c **** {
+  78               		.loc 1 46 1 is_stmt 1 view -0
+  79               		.cfi_startproc
+  80               	/* prologue: function */
+  81               	/* frame size = 0 */
+  82               	/* stack size = 0 */
+  83               	.L__stack_usage = 0
+  47:system/tasks.c ****     if(at >= 0 && at < osQueue->size)
+  84               		.loc 1 47 5 view .LVU12
+  85               		.loc 1 47 7 is_stmt 0 view .LVU13
+  86 0026 87FD      		sbrc r24,7
+  87 0028 00C0      		rjmp .L7
+  88               		.loc 1 47 31 discriminator 1 view .LVU14
+  89 002a E091 0000 		lds r30,osQueue
+  90 002e F091 0000 		lds r31,osQueue+1
+  91               		.loc 1 47 22 discriminator 1 view .LVU15
+  92 0032 082E      		mov __tmp_reg__,r24
+  93 0034 000C      		lsl r0
+  94 0036 990B      		sbc r25,r25
+  95               		.loc 1 47 31 discriminator 1 view .LVU16
+  96 0038 2281      		ldd r18,Z+2
+  97               		.loc 1 47 16 discriminator 1 view .LVU17
+  98 003a 2817      		cp r18,r24
+  99 003c 1906      		cpc __zero_reg__,r25
+ 100 003e 01F0      		breq .L7
+ 101 0040 04F0      		brlt .L7
+  48:system/tasks.c ****         return osQueue->tasks[at];
+ 102               		.loc 1 48 9 is_stmt 1 view .LVU18
+ 103               		.loc 1 48 30 is_stmt 0 view .LVU19
+ 104 0042 880F      		lsl r24
+ 105 0044 991F      		rol r25
+ 106               	.LVL3:
+ 107               		.loc 1 48 30 view .LVU20
+ 108 0046 2081      		ld r18,Z
+ 109 0048 3181      		ldd r19,Z+1
+ 110 004a 820F      		add r24,r18
+ 111 004c 931F      		adc r25,r19
+ 112 004e FC01      		movw r30,r24
+ 113 0050 8081      		ld r24,Z
+ 114 0052 9181      		ldd r25,Z+1
+ 115 0054 0895      		ret
+ 116               	.L7:
+  49:system/tasks.c **** 
+  50:system/tasks.c ****     return NULL;
+ 117               		.loc 1 50 12 view .LVU21
+ 118 0056 90E0      		ldi r25,0
+ 119 0058 80E0      		ldi r24,0
+ 120               	/* epilogue start */
+  51:system/tasks.c **** }
+ 121               		.loc 1 51 1 view .LVU22
+ 122 005a 0895      		ret
+ 123               		.cfi_endproc
+ 124               	.LFE4:
+ 126               	.global	osTasksQueueInsert
+ 128               	osTasksQueueInsert:
+ 129               	.LVL4:
+ 130               	.LFB5:
+  52:system/tasks.c **** 
+  53:system/tasks.c **** void osTasksQueueInsert(TaskControlBlock *task)
+  54:system/tasks.c **** {
+ 131               		.loc 1 54 1 is_stmt 1 view -0
+ 132               		.cfi_startproc
+ 133               	/* prologue: function */
+ 134               	/* frame size = 0 */
+ 135               	/* stack size = 0 */
+ 136               	.L__stack_usage = 0
+ 137               		.loc 1 54 1 is_stmt 0 view .LVU24
+ 138 005c BC01      		movw r22,r24
+  55:system/tasks.c ****     osQueueInsert(osQueue, task);
+ 139               		.loc 1 55 5 is_stmt 1 view .LVU25
+ 140 005e 8091 0000 		lds r24,osQueue
+ 141 0062 9091 0000 		lds r25,osQueue+1
+ 142               	.LVL5:
+ 143               		.loc 1 55 5 is_stmt 0 view .LVU26
+ 144 0066 0C94 0000 		jmp osQueueInsert
+ 145               	.LVL6:
+ 146               		.loc 1 55 5 view .LVU27
+ 147               		.cfi_endproc
+ 148               	.LFE5:
+ 150               	.global	osTasksQueueRemove
+ 152               	osTasksQueueRemove:
+ 153               	.LVL7:
+ 154               	.LFB6:
+  56:system/tasks.c **** }
+  57:system/tasks.c **** 
+  58:system/tasks.c **** void osTasksQueueRemove(TaskControlBlock *task)
+  59:system/tasks.c **** {
+ 155               		.loc 1 59 1 is_stmt 1 view -0
+ 156               		.cfi_startproc
+ 157               	/* prologue: function */
+ 158               	/* frame size = 0 */
+ 159               	/* stack size = 0 */
+ 160               	.L__stack_usage = 0
+ 161               		.loc 1 59 1 is_stmt 0 view .LVU29
+ 162 006a BC01      		movw r22,r24
+  60:system/tasks.c ****     osQueueRemove(osQueue, task);
+ 163               		.loc 1 60 5 is_stmt 1 view .LVU30
+ 164 006c 8091 0000 		lds r24,osQueue
+ 165 0070 9091 0000 		lds r25,osQueue+1
+ 166               	.LVL8:
+ 167               		.loc 1 60 5 is_stmt 0 view .LVU31
+ 168 0074 0C94 0000 		jmp osQueueRemove
+ 169               	.LVL9:
+ 170               		.loc 1 60 5 view .LVU32
+ 171               		.cfi_endproc
+ 172               	.LFE6:
+ 174               	.global	osQueue
+ 175               		.section .bss
+ 178               	osQueue:
+ 179 0000 0000      		.zero	2
+ 180               		.text
+ 181               	.Letext0:
+ 182               		.file 2 "/usr/avr/include/stdint.h"
+ 183               		.file 3 "/usr/avr/include/stdio.h"
+ 184               		.file 4 "system/tasks.h"
+ 185               		.file 5 "system/queue.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 tasks.c
+     /tmp/ccHWWDV7.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccHWWDV7.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccHWWDV7.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccHWWDV7.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccHWWDV7.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccHWWDV7.s:12     .text:0000000000000000 osTasksQueueInit
+     /tmp/ccHWWDV7.s:178    .bss:0000000000000000 osQueue
+     /tmp/ccHWWDV7.s:36     .text:000000000000000e osTasksQueueDestroy
+     /tmp/ccHWWDV7.s:54     .text:000000000000001a osTasksQueueSize
+     /tmp/ccHWWDV7.s:75     .text:0000000000000026 osTasksQueueAt
+     /tmp/ccHWWDV7.s:128    .text:000000000000005c osTasksQueueInsert
+     /tmp/ccHWWDV7.s:152    .text:000000000000006a osTasksQueueRemove
+
+UNDEFINED SYMBOLS
+osQueueCreate
+osQueueDestroy
+osQueueInsert
+osQueueRemove
+__do_clear_bss
