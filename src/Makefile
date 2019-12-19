@@ -1,5 +1,5 @@
 # Target file name (without extension).
-TARGET = test5
+TARGET = main
 
 # MCU name
 MCU = atmega328pb
@@ -9,8 +9,7 @@ FORMAT = ihex
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC =  $(wildcard *.c) $(wildcard ../lib/*.c) $(wildcard ../lib/pirc_lcd/*.c)
-#lib/uart.c system/asm.c system/mutex.c system/queue.c system/scheduler.c system/system.c system/tasks.c lib/gpio.c lib/delay.c lib/io_interrupt.c lib/spi.c lib/ili9341/lcd.c lib/pirc_lcd/ugui.c lib/pirc_lcd/LCD_Ili9341.c lib/pirc_lcd/XPT2046.c 
+SRC = $(wildcard *.c) $(wildcard ../system/*.c) $(wildcard ../lib/*.c) $(wildcard ../lib/pirc_lcd/*.c)
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -121,9 +120,12 @@ AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 # Program EEPROM
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
+# Programconfig path
+AVRDUDE_CONF = ../conf/avrdude.conf
 
 
-AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -C avrdude.conf
+
+AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -C $(AVRDUDE_CONF)
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY) -B 3
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
@@ -204,7 +206,7 @@ LST = $(SRC:.c=.lst) $(ASRC:.S=.lst)
 
 
 # Compiler flags to generate dependency files.
-GENDEPFLAGS = -MD -MP -MF .dep/$(@F).d
+GENDEPFLAGS = -MD -MP -MF .dep/$(@F).d -fdata-sections -ffunction-sections
 
 
 # Combine all necessary flags and optional flags.

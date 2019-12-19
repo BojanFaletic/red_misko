@@ -135,7 +135,7 @@ void osSetupTimerInterrupt()
     // changed from tim0
     TIMSK1 |= (1 << OCIE1A);
 
-    sei();
+    // sei();
 }
 
 uint8_t osTAS(uint8_t *v)
@@ -305,14 +305,14 @@ void osAsmYieldFromTick(void) __attribute__ ((naked));
 void osAsmYieldFromTick()
 {
     SAVE_CONTEXT
-    osContextSwitch(1,1);
+    //osContextSwitch(1,1);
+    osContextSwitch(1,0);
     RESTORE_CONTEXT
 
     asm volatile("ret");
 }
 
 ISR (TIMER1_COMPA_vect){
-    PORTE = 0x03;
     osAsmYieldFromTick();
     asm volatile("reti");
 }
